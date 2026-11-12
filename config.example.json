@@ -1,0 +1,5 @@
+{
+  "ANTHROPIC_API_KEY": "paste-your-key-here",
+  "APP_PASSWORD": "choose-a-long-password",
+  "ANTHROPIC_MODEL": "claude-opus-5-5"
+}

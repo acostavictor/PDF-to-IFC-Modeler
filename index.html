@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PDF to IFC Modeler</title>
+<link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+<header class="top">
+  <div>
+    <h1>PDF to IFC Modeler</h1>
+    <p>Read engineering drawings, review the dimensions, download a 3D model.</p>
+  </div>
+  <button id="logout" class="ghost" hidden>Sign out</button>
+</header>
+
+<main>
+  <div id="banner" class="banner" role="status" hidden></div>
+
+  <section id="login" class="card narrow" hidden>
+    <h2>Sign in</h2>
+    <form id="login-form">
+      <label for="password">Password</label>
+      <input id="password" type="password" autocomplete="current-password" required>
+      <button type="submit">Sign in</button>
+    </form>
+  </section>
+
+  <div id="app" hidden>
+    <section class="card">
+      <h2><span class="step">1</span> Choose the structure type</h2>
+      <div id="templates" class="choices"></div>
+    </section>
+
+    <section class="card">
+      <h2><span class="step">2</span> Add the drawings</h2>
+      <p class="muted">The PDF stays in your browser. Only the page images you choose to read are sent to the server, and from there to the AI model.</p>
+      <div class="inline">
+        <input id="pdf" type="file" accept="application/pdf">
+        <span id="pdf-info" class="muted"></span>
+      </div>
+      <div id="read-options" hidden>
+        <fieldset>
+          <legend>Pages to read</legend>
+          <div id="pages" class="pages"></div>
+        </fieldset>
+        <div class="inline">
+          <label for="detail">Detail per page</label>
+          <select id="detail">
+            <option value="1x1">Overview only (fastest, small text may be unreadable)</option>
+            <option value="2x2">Overview + 4 close-ups</option>
+            <option value="3x2" selected>Overview + 6 close-ups (recommended for large sheets)</option>
+            <option value="4x3">Overview + 12 close-ups</option>
+          </select>
+          <span id="image-count" class="muted"></span>
+        </div>
+        <label for="notes">Notes for the reader (optional)</label>
+        <textarea id="notes" rows="2" placeholder="For example: sheet 4 is superseded by the clouded revision on sheet 2."></textarea>
+        <div class="inline">
+          <button id="read">Read drawings with AI</button>
+          <span id="ai-state" class="muted"></span>
+        </div>
+        <div id="progress" class="muted" role="status"></div>
+      </div>
+      <p class="muted">No drawings to hand, or prefer to type? Skip to step 3 and fill in the values yourself.</p>
+    </section>
+
+    <section class="card">
+      <h2><span class="step">3</span> Review every value, then build the model</h2>
+      <div id="ai-notes" class="notes" hidden></div>
+      <div id="tally" class="tally"></div>
+      <div class="review">
+        <div class="viewer">
+          <div class="viewer-bar">
+            <button id="prev" class="ghost" aria-label="Previous page">&larr;</button>
+            <span id="page-label">No PDF</span>
+            <button id="next" class="ghost" aria-label="Next page">&rarr;</button>
+            <button id="zoom-out" class="ghost" aria-label="Zoom out">&minus;</button>
+            <button id="zoom-in" class="ghost" aria-label="Zoom in">+</button>
+          </div>
+          <div id="canvas-wrap" class="canvas-wrap"><canvas id="canvas"></canvas></div>
+        </div>
+        <div class="form">
+          <fieldset>
+            <legend>Project</legend>
+            <div class="meta">
+              <label>Project name <input id="m-project" type="text"></label>
+              <label>Facility <input id="m-facility" type="text"></label>
+              <label>Drawing reference <input id="m-source" type="text" placeholder="Drawing numbers and revision"></label>
+              <label>Author <input id="m-author" type="text"></label>
+            </div>
+          </fieldset>
+          <div id="params"></div>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="build">Download IFC model</button>
+        <span id="extra-exports"></span>
+        <button id="save" class="ghost">Save values</button>
+        <label class="ghost filebtn">Load values<input id="load" type="file" accept="application/json" hidden></label>
+      </div>
+      <div id="build-msg" role="status"></div>
+    </section>
+  </div>
+</main>
+<footer>Models are for reference and coordination. Check every value against the drawings; not for construction.</footer>
+<script type="module" src="static/app.js"></script>
+</body>
+</html>
