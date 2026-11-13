@@ -1,5 +1,8 @@
 {
+  "AI_PROVIDER": "anthropic",
   "ANTHROPIC_API_KEY": "paste-your-key-here",
+  "ANTHROPIC_MODEL": "claude-opus-5-5",
   "APP_PASSWORD": "choose-a-long-password",
-  "ANTHROPIC_MODEL": "claude-opus-5-5"
+  "GEMINI_API_KEY": "paste-your-gemini-key-here",
+  "GEMINI_MODEL": "gemini-3.8-flash"
 }

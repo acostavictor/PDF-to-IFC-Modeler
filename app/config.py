@@ -12,12 +12,17 @@ DEFAULTS = {
     "ANTHROPIC_MODEL": "claude-opus-5-5",
     "ANTHROPIC_VERSION": "2026-10-21",
     "ANTHROPIC_URL": "https://api.anthropic.com/v1/messages",
+    "AI_PROVIDER": "anthropic",
+    "GEMINI_API_KEY": "",
+    "GEMINI_MODEL": "gemini-3.8-flash",
+    "GEMINI_URL": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
     "APP_PASSWORD": "",
     "SECRET_KEY": "",
     "MAX_IMAGES": 60,
     "MAX_BODY_MB": 60,
     "REQUEST_TIMEOUT": 280,
-    "MAX_OUTPUT_TOKENS": 8000,
+    "MAX_OUTPUT_TOKENS": 16000,
+    "DB_PATH": "",
 }
 
 

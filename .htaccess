@@ -9,7 +9,7 @@ AddType application/wasm .wasm
 RewriteEngine On
 # Keep source, tests and any config file private.
 RewriteRule ^(app|tests|tools|docs|\.git|\.github)(/|$) - [F,L]
-RewriteRule ^(config.*\.json|.*\.py|.*\.md|\.cpanel\.yml|\.gitignore)$ - [F,L]
+RewriteRule ^(config.*\.json|.*\.py|.*\.md|.*\.sqlite3.*|\.cpanel\.yml|\.gitignore)$ - [F,L]
 # Send API calls to the CGI script.
 RewriteRule ^api/(.*)$ index.cgi/api/$1 [QSA,L]
 </IfModule>

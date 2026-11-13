@@ -1,0 +1,3062 @@
+{
+ "library": [
+  {
+   "category": "Piles",
+   "description": "Plumb bearing pile, head at +8, tip at -60.",
+   "item": {
+    "at": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "id": "c1",
+    "kind": "bearing pile",
+    "library_item": "Pile, 24 in octagonal prestressed concrete",
+    "material": "Prestressed concrete",
+    "name": "24 in octagonal pile",
+    "note": "",
+    "params": {
+     "batter": 0.0,
+     "batter_dir": 0.0,
+     "shape": "octagonal",
+     "size": 2.0,
+     "tip_el": -60.0,
+     "top_el": 8.0,
+     "wall": 0.042
+    },
+    "rotate": 0.0,
+    "source": "library",
+    "type": "pile"
+   },
+   "name": "Pile, 24 in octagonal prestressed concrete",
+   "tags": "concrete, bearing",
+   "units": "ft"
+  },
+  {
+   "category": "Piles",
+   "description": "Plumb bearing pile, head at +8, tip at -50.",
+   "item": {
+    "at": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "id": "c1",
+    "kind": "bearing pile",
+    "library_item": "Pile, 18 in square prestressed concrete",
+    "material": "Prestressed concrete",
+    "name": "18 in square pile",
+    "note": "",
+    "params": {
+     "batter": 0.0,
+     "batter_dir": 0.0,
+     "shape": "square",
+     "size": 1.5,
+     "tip_el": -50.0,
+     "top_el": 8.0,
+     "wall": 0.042
+    },
+    "rotate": 0.0,
+    "source": "library",
+    "type": "pile"
+   },
+   "name": "Pile, 18 in square prestressed concrete",
+   "tags": "concrete, bearing",
+   "units": "ft"
+  },
+  {
+   "category": "Piles",
+   "description": "Plumb pipe pile with 1/2 in wall.",
+   "item": {
+    "at": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "id": "c1",
+    "kind": "bearing pile",
+    "library_item": "Pile, 24 in steel pipe",
+    "material": "Steel",
+    "name": "24 in pipe pile",
+    "note": "",
+    "params": {
+     "batter": 0.0,
+     "batter_dir": 0.0,
+     "shape": "pipe",
+     "size": 2.0,
+     "tip_el": -70.0,
+     "top_el": 8.0,
+     "wall": 0.042
+    },
+    "rotate": 0.0,
+    "source": "library",
+    "type": "pile"
+   },
+   "name": "Pile, 24 in steel pipe",
+   "tags": "steel, pipe",
+   "units": "ft"
+  },
+  {
+   "category": "Piles",
+   "description": "Battered pipe pile; set the batter direction after placing.",
+   "item": {
+    "at": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "id": "c1",
+    "kind": "batter pile",
+    "library_item": "Batter pile, 24 in steel pipe, 1H:4V",
+    "material": "Steel",
+    "name": "24 in batter pile",
+    "note": "",
+    "params": {
+     "batter": 0.25,
+     "batter_dir": 0.0,
+     "shape": "pipe",
+     "size": 2.0,
+     "tip_el": -70.0,
+     "top_el": 8.0,
+     "wall": 0.042
+    },
+    "rotate": 0.0,
+    "source": "library",
+    "type": "pile"
+   },
+   "name": "Batter pile, 24 in steel pipe, 1H:4V",
+   "tags": "steel, batter",
+   "units": "ft"
+  },
+  {
+   "category": "Piles",
+   "description": "Round timber pile, used for fender and guide piles.",
+   "item": {
+    "at": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "id": "c1",
+    "kind": "fender pile",
+    "library_item": "Timber pile, 12 in",
+    "material": "Timber",
+    "name": "12 in timber pile",
+    "note": "",
+    "params": {
+     "batter": 0.0,
+     "batter_dir": 0.0,
+     "shape": "round",
+     "size": 1.0,
+     "tip_el": -30.0,
+     "top_el": 10.0,
+     "wall": 0.042
+    },
+    "rotate": 0.0,
+    "source": "library",
+    "type": "pile"
+   },
+   "name": "Timber pile, 12 in",
+   "tags": "timber, fender",
+   "units": "ft"
+  },
+  {
+   "category": "Piles",
+   "description": "Guide pile for floating docks; head well above high water.",
+   "item": {
+    "at": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "id": "c1",
+    "kind": "guide pile",
+    "library_item": "Guide pile, 16 in steel pipe",
+    "material": "Steel",
+    "name": "16 in guide pile",
+    "note": "",
+    "params": {
+     "batter": 0.0,
+     "batter_dir": 0.0,
+     "shape": "pipe",
+     "size": 1.333,
+     "tip_el": -40.0,
+     "top_el": 14.0,
+     "wall": 0.031
+    },
+    "rotate": 0.0,
+    "source": "library",
+    "type": "pile"
+   },
+   "name": "Guide pile, 16 in steel pipe",
+   "tags": "marina, guide",
+   "units": "ft"
+  },
+  {
+   "category": "Pile caps and beams",
+   "description": "Cap beam 42 ft long, top at +10.5.",
+   "item": {
+    "at": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "id": "c1",
+    "kind": "pile cap beam",
+    "library_item": "Pile cap beam, 4 ft x 3 ft concrete",
+    "material": "Concrete",
+    "name": "Cap beam",
+    "note": "",
+    "params": {
+     "depth": 3.0,
+     "path": [
+      [
+       0.0,
+       -1.0,
+       10.5
+      ],
+      [
+       0.0,
+       41.0,
+       10.5
+      ]
+     ],
+     "reference": "top",
+     "section": "rectangle",
+     "wall": 0.03,
+     "width": 4.0
+    },
+    "rotate": 0.0,
+    "source": "library",
+    "type": "beam"
+   },
+   "name": "Pile cap beam, 4 ft x 3 ft concrete",
+   "tags": "",
+   "units": "ft"
+  },
+  {
+   "category": "Pile caps and beams",
+   "description": "Square pile cap 4 ft deep.",
+   "item": {
+    "at": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "id": "c1",
+    "kind": "pile cap",
+    "library_item": "Pile cap, 8 ft square",
+    "material": "Concrete",
+    "name": "Pile cap",
+    "note": "",
+    "params": {
+     "bottom_el": 6.0,
+     "length": 8.0,
+     "plan": "rectangle",
+     "top_el": 10.0,
+     "width": 8.0
+    },
+    "rotate": 0.0,
+    "source": "library",
+    "type": "block"
+   },
+   "name": "Pile cap, 8 ft square",
+   "tags": "",
+   "units": "ft"
+  },
+  {
+   "category": "Decks",
+   "description": "Rectangular deck 100 ft x 40 ft; edit the size or give an outline.",
+   "item": {
+    "at": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "id": "c1",
+    "kind": "deck",
+    "library_item": "Deck slab, 18 in concrete",
+    "material": "Concrete",
+    "name": "Deck slab",
+    "note": "",
+    "params": {
+     "length": 100.0,
+     "outline": [],
+     "thickness": 1.5,
+     "top_el": 12.0,
+     "width": 40.0
+    },
+    "rotate": 0.0,
+    "source": "library",
+    "type": "slab"
+   },
+   "name": "Deck slab, 18 in concrete",
+   "tags": "",
+   "units": "ft"
+  },
+  {
+   "category": "Decks",
+   "description": "Edge bullrail sitting on the deck.",
+   "item": {
+    "at": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "id": "c1",
+    "kind": "bullrail",
+    "library_item": "Timber bullrail, 12 in x 12 in",
+    "material": "Timber",
+    "name": "Bullrail",
+    "note": "",
+    "params": {
+     "depth": 1.0,
+     "path": [
+      [
+       0.0,
+       0.0,
+       13.0
+      ],
+      [
+       100.0,
+       0.0,
+       13.0
+      ]
+     ],
+     "reference": "top",
+     "section": "rectangle",
+     "wall": 0.03,
+     "width": 1.0
+    },
+    "rotate": 0.0,
+    "source": "library",
+    "type": "beam"
+   },
+   "name": "Timber bullrail, 12 in x 12 in",
+   "tags": "",
+   "units": "ft"
+  },
+  {
+   "category": "Walls and bulkheads",
+   "description": "Straight wall 100 ft long, top +9, tip -35. Thickness is the system depth.",
+   "item": {
+    "at": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "id": "c1",
+    "kind": "sheet pile wall",
+    "library_item": "Steel sheet pile wall",
+    "material": "Steel",
+    "name": "Sheet pile wall",
+    "note": "",
+    "params": {
+     "align": "centre",
+     "bottom_el": -35.0,
+     "closed": "no",
+     "path": [
+      [
+       0.0,
+       0.0
+      ],
+      [
+       100.0,
+       0.0
+      ]
+     ],
+     "thickness": 1.5,
+     "top_el": 9.0
+    },
+    "rotate": 0.0,
+    "source": "library",
+    "type": "wall"
+   },
+   "name": "Steel sheet pile wall",
+   "tags": "",
+   "units": "ft"
+  },
+  {
+   "category": "Walls and bulkheads",
+   "description": "Mass concrete section 100 ft long with a battered back.",
+   "item": {
+    "at": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "id": "c1",
+    "kind": "quay wall",
+    "library_item": "Concrete gravity quay wall",
+    "material": "Concrete",
+    "name": "Gravity quay wall",
+    "note": "",
+    "params": {
+     "closed": "no",
+     "path": [
+      [
+       0.0,
+       0.0
+      ],
+      [
+       100.0,
+       0.0
+      ]
+     ],
+     "section": [
+      [
+       0.0,
+       -30.0
+      ],
+      [
+       -20.0,
+       -30.0
+      ],
+      [
+       -20.0,
+       -26.0
+      ],
+      [
+       -9.0,
+       9.0
+      ],
+      [
+       0.0,
+       9.0
+      ]
+     ]
+    },
+    "rotate": 0.0,
+    "source": "library",
+    "type": "section_sweep"
+   },
+   "name": "Concrete gravity quay wall",
+   "tags": "",
+   "units": "ft"
+  },
+  {
+   "category": "Walls and bulkheads",
+   "description": "Closed circular cell approximated with 16 sides.",
+   "item": {
+    "at": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "id": "c1",
+    "kind": "sheet pile wall",
+    "library_item": "Sheet pile cell, 40 ft diameter",
+    "material": "Steel",
+    "name": "Sheet pile cell",
+    "note": "",
+    "params": {
+     "align": "centre",
+     "bottom_el": -30.0,
+     "closed": "yes",
+     "path": [
+      [
+       20.0,
+       0.0
+      ],
+      [
+       18.478,
+       7.654
+      ],
+      [
+       14.142,
+       14.142
+      ],
+      [
+       7.654,
+       18.478
+      ],
+      [
+       0.0,
+       20.0
+      ],
+      [
+       -7.654,
+       18.478
+      ],
+      [
+       -14.142,
+       14.142
+      ],
+      [
+       -18.478,
+       7.654
+      ],
+      [
+       -20.0,
+       0.0
+      ],
+      [
+       -18.478,
+       -7.654
+      ],
+      [
+       -14.142,
+       -14.142
+      ],
+      [
+       -7.654,
+       -18.478
+      ],
+      [
+       -0.0,
+       -20.0
+      ],
+      [
+       7.654,
+       -18.478
+      ],
+      [
+       14.142,
+       -14.142
+      ],
+      [
+       18.478,
+       -7.654
+      ]
+     ],
+     "thickness": 1.0,
+     "top_el": 10.0
+    },
+    "rotate": 0.0,
+    "source": "library",
+    "type": "wall"
+   },
+   "name": "Sheet pile cell, 40 ft diameter",
+   "tags": "",
+   "units": "ft"
+  },
+  {
+   "category": "Breakwaters and revetments",
+   "description": "Armour, underlayer and core at 1V:2H, crest +14, seabed -20, 100 ft long.",
+   "item": {
+    "at": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "children": [
+     {
+      "at": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "id": "c2",
+      "kind": "armour layer",
+      "material": "Armour rock",
+      "name": "Armour layer",
+      "note": "",
+      "params": {
+       "closed": "no",
+       "path": [
+        [
+         0.0,
+         0.0
+        ],
+        [
+         100.0,
+         0.0
+        ]
+       ],
+       "section": [
+        [
+         -76.0,
+         -20.0
+        ],
+        [
+         -8.0,
+         14.0
+        ],
+        [
+         8.0,
+         14.0
+        ],
+        [
+         76.0,
+         -20.0
+        ],
+        [
+         64.0,
+         -20.0
+        ],
+        [
+         6.0,
+         9.0
+        ],
+        [
+         -6.0,
+         9.0
+        ],
+        [
+         -64.0,
+         -20.0
+        ]
+       ]
+      },
+      "rotate": 0.0,
+      "source": "library",
+      "type": "section_sweep"
+     },
+     {
+      "at": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "id": "c3",
+      "kind": "underlayer",
+      "material": "Underlayer rock",
+      "name": "Underlayer",
+      "note": "",
+      "params": {
+       "closed": "no",
+       "path": [
+        [
+         0.0,
+         0.0
+        ],
+        [
+         100.0,
+         0.0
+        ]
+       ],
+       "section": [
+        [
+         -64.0,
+         -20.0
+        ],
+        [
+         -6.0,
+         9.0
+        ],
+        [
+         6.0,
+         9.0
+        ],
+        [
+         64.0,
+         -20.0
+        ],
+        [
+         54.0,
+         -20.0
+        ],
+        [
+         4.0,
+         5.0
+        ],
+        [
+         -4.0,
+         5.0
+        ],
+        [
+         -54.0,
+         -20.0
+        ]
+       ]
+      },
+      "rotate": 0.0,
+      "source": "library",
+      "type": "section_sweep"
+     },
+     {
+      "at": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "id": "c4",
+      "kind": "core",
+      "material": "Quarry run core",
+      "name": "Core",
+      "note": "",
+      "params": {
+       "closed": "no",
+       "path": [
+        [
+         0.0,
+         0.0
+        ],
+        [
+         100.0,
+         0.0
+        ]
+       ],
+       "section": [
+        [
+         -54.0,
+         -20.0
+        ],
+        [
+         -4.0,
+         5.0
+        ],
+        [
+         4.0,
+         5.0
+        ],
+        [
+         54.0,
+         -20.0
+        ]
+       ]
+      },
+      "rotate": 0.0,
+      "source": "library",
+      "type": "section_sweep"
+     }
+    ],
+    "id": "c1",
+    "kind": "breakwater section",
+    "library_item": "Rubble mound breakwater section",
+    "material": "",
+    "name": "Rubble mound",
+    "note": "",
+    "params": {},
+    "rotate": 0.0,
+    "source": "library",
+    "type": "assembly"
+   },
+   "name": "Rubble mound breakwater section",
+   "tags": "armour, core",
+   "units": "ft"
+  },
+  {
+   "category": "Breakwaters and revetments",
+   "description": "Armour over a filter layer on a 1V:2H bank, 100 ft long.",
+   "item": {
+    "at": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "children": [
+     {
+      "at": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "id": "c2",
+      "kind": "armour layer",
+      "material": "Armour rock",
+      "name": "Armour",
+      "note": "",
+      "params": {
+       "closed": "no",
+       "path": [
+        [
+         0.0,
+         0.0
+        ],
+        [
+         100.0,
+         0.0
+        ]
+       ],
+       "section": [
+        [
+         0.0,
+         -10.0
+        ],
+        [
+         6.0,
+         -10.0
+        ],
+        [
+         46.0,
+         10.0
+        ],
+        [
+         40.0,
+         10.0
+        ]
+       ]
+      },
+      "rotate": 0.0,
+      "source": "library",
+      "type": "section_sweep"
+     },
+     {
+      "at": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "id": "c3",
+      "kind": "filter layer",
+      "material": "Filter rock",
+      "name": "Filter",
+      "note": "",
+      "params": {
+       "closed": "no",
+       "path": [
+        [
+         0.0,
+         0.0
+        ],
+        [
+         100.0,
+         0.0
+        ]
+       ],
+       "section": [
+        [
+         -3.0,
+         -10.0
+        ],
+        [
+         0.0,
+         -10.0
+        ],
+        [
+         40.0,
+         10.0
+        ],
+        [
+         37.0,
+         10.0
+        ]
+       ]
+      },
+      "rotate": 0.0,
+      "source": "library",
+      "type": "section_sweep"
+     }
+    ],
+    "id": "c1",
+    "kind": "other",
+    "library_item": "Rock revetment section",
+    "material": "",
+    "name": "Revetment",
+    "note": "",
+    "params": {},
+    "rotate": 0.0,
+    "source": "library",
+    "type": "assembly"
+   },
+   "name": "Rock revetment section",
+   "tags": "",
+   "units": "ft"
+  },
+  {
+   "category": "Fenders",
+   "description": "Projects toward +x; rotate to face the berth.",
+   "item": {
+    "at": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "id": "c1",
+    "kind": "cylindrical fender",
+    "library_item": "Cylindrical fender, 3 ft x 6 ft",
+    "material": "",
+    "name": "Cylindrical fender",
+    "note": "",
+    "params": {
+     "height": 3.0,
+     "length": 6.0,
+     "projection": 3.0
+    },
+    "rotate": 0.0,
+    "source": "library",
+    "type": "fender"
+   },
+   "name": "Cylindrical fender, 3 ft x 6 ft",
+   "tags": "",
+   "units": "ft"
+  },
+  {
+   "category": "Fenders",
+   "description": "Arch fender unit 6 ft long, 2 ft high, 1.5 ft projection.",
+   "item": {
+    "at": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "id": "c1",
+    "kind": "arch fender",
+    "library_item": "Arch fender, 6 ft",
+    "material": "",
+    "name": "Arch fender",
+    "note": "",
+    "params": {
+     "height": 2.0,
+     "length": 6.0,
+     "projection": 1.5
+    },
+    "rotate": 0.0,
+    "source": "library",
+    "type": "fender"
+   },
+   "name": "Arch fender, 6 ft",
+   "tags": "",
+   "units": "ft"
+  },
+  {
+   "category": "Fenders",
+   "description": "Cone fender 4 ft in diameter projecting 4 ft.",
+   "item": {
+    "at": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "id": "c1",
+    "kind": "cone fender",
+    "library_item": "Cone fender, 4 ft",
+    "material": "",
+    "name": "Cone fender",
+    "note": "",
+    "params": {
+     "height": 4.0,
+     "length": 4.0,
+     "projection": 4.0
+    },
+    "rotate": 0.0,
+    "source": "library",
+    "type": "fender"
+   },
+   "name": "Cone fender, 4 ft",
+   "tags": "",
+   "units": "ft"
+  },
+  {
+   "category": "Mooring hardware",
+   "description": "Single bollard on a deck.",
+   "item": {
+    "at": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "id": "c1",
+    "kind": "bollard",
+    "library_item": "Bollard, 100 t",
+    "material": "Cast steel",
+    "name": "Bollard",
+    "note": "",
+    "params": {
+     "capacity": "100 t",
+     "diameter": 1.8,
+     "height": 2.0
+    },
+    "rotate": 0.0,
+    "source": "library",
+    "type": "mooring"
+   },
+   "name": "Bollard, 100 t",
+   "tags": "",
+   "units": "ft"
+  },
+  {
+   "category": "Mooring hardware",
+   "description": "Marina cleat.",
+   "item": {
+    "at": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "id": "c1",
+    "kind": "cleat",
+    "library_item": "Cleat, 30 in",
+    "material": "Cast steel",
+    "name": "Cleat",
+    "note": "",
+    "params": {
+     "capacity": "",
+     "diameter": 2.5,
+     "height": 0.6
+    },
+    "rotate": 0.0,
+    "source": "library",
+    "type": "mooring"
+   },
+   "name": "Cleat, 30 in",
+   "tags": "",
+   "units": "ft"
+  },
+  {
+   "category": "Mooring hardware",
+   "description": "Hook unit on a dolphin.",
+   "item": {
+    "at": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "id": "c1",
+    "kind": "quick release hook",
+    "library_item": "Quick release hook",
+    "material": "Steel",
+    "name": "Quick release hook",
+    "note": "",
+    "params": {
+     "capacity": "75 t",
+     "diameter": 4.0,
+     "height": 2.5
+    },
+    "rotate": 0.0,
+    "source": "library",
+    "type": "mooring"
+   },
+   "name": "Quick release hook",
+   "tags": "",
+   "units": "ft"
+  },
+  {
+   "category": "Floating docks",
+   "description": "Concrete float with about 1.5 ft freeboard.",
+   "item": {
+    "at": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "id": "c1",
+    "kind": "pontoon",
+    "library_item": "Floating dock unit, 8 ft x 20 ft",
+    "material": "Concrete float",
+    "name": "Float unit",
+    "note": "",
+    "params": {
+     "bottom_el": -1.5,
+     "length": 20.0,
+     "plan": "rectangle",
+     "top_el": 1.5,
+     "width": 8.0
+    },
+    "rotate": 0.0,
+    "source": "library",
+    "type": "block"
+   },
+   "name": "Floating dock unit, 8 ft x 20 ft",
+   "tags": "",
+   "units": "ft"
+  },
+  {
+   "category": "Floating docks",
+   "description": "Finger pier float; rotate 90 degrees to run across the walkway.",
+   "item": {
+    "at": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "id": "c1",
+    "kind": "pontoon",
+    "library_item": "Finger float, 4 ft x 30 ft",
+    "material": "Concrete float",
+    "name": "Finger float",
+    "note": "",
+    "params": {
+     "bottom_el": -1.0,
+     "length": 30.0,
+     "plan": "rectangle",
+     "top_el": 1.5,
+     "width": 4.0
+    },
+    "rotate": 0.0,
+    "source": "library",
+    "type": "block"
+   },
+   "name": "Finger float, 4 ft x 30 ft",
+   "tags": "",
+   "units": "ft"
+  },
+  {
+   "category": "Floating docks",
+   "description": "Gangway from an abutment down to a float.",
+   "item": {
+    "at": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "id": "c1",
+    "kind": "gangway",
+    "library_item": "Aluminium gangway, 4 ft x 45 ft",
+    "material": "Aluminium",
+    "name": "Gangway",
+    "note": "",
+    "params": {
+     "depth": 0.5,
+     "path": [
+      [
+       0.0,
+       0.0,
+       9.0
+      ],
+      [
+       43.0,
+       0.0,
+       2.5
+      ]
+     ],
+     "reference": "top",
+     "section": "rectangle",
+     "wall": 0.03,
+     "width": 4.0
+    },
+    "rotate": 0.0,
+    "source": "library",
+    "type": "beam"
+   },
+   "name": "Aluminium gangway, 4 ft x 45 ft",
+   "tags": "",
+   "units": "ft"
+  },
+  {
+   "category": "Assemblies",
+   "description": "Cap beam 42 ft long on 24 in octagonal piles at 10 ft, with a batter pile at each end.",
+   "item": {
+    "at": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "children": [
+     {
+      "at": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "id": "c2",
+      "kind": "pile cap beam",
+      "material": "Concrete",
+      "name": "Cap beam",
+      "note": "",
+      "params": {
+       "depth": 3.0,
+       "path": [
+        [
+         0.0,
+         -1.0,
+         10.5
+        ],
+        [
+         0.0,
+         41.0,
+         10.5
+        ]
+       ],
+       "reference": "top",
+       "section": "rectangle",
+       "wall": 0.03,
+       "width": 4.0
+      },
+      "rotate": 0.0,
+      "source": "library",
+      "type": "beam"
+     },
+     {
+      "at": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "id": "c3",
+      "kind": "bearing pile",
+      "material": "Prestressed concrete",
+      "name": "Plumb piles",
+      "note": "",
+      "params": {
+       "batter": 0.0,
+       "batter_dir": 0.0,
+       "shape": "octagonal",
+       "size": 2.0,
+       "tip_el": -65.0,
+       "top_el": 8.0,
+       "wall": 0.042
+      },
+      "positions": [
+       [
+        0.0,
+        5.0,
+        0.0
+       ],
+       [
+        0.0,
+        15.0,
+        0.0
+       ],
+       [
+        0.0,
+        25.0,
+        0.0
+       ],
+       [
+        0.0,
+        35.0,
+        0.0
+       ]
+      ],
+      "rotate": 0.0,
+      "source": "library",
+      "type": "pile"
+     },
+     {
+      "at": [
+       0.0,
+       2.0,
+       0.0
+      ],
+      "id": "c4",
+      "kind": "batter pile",
+      "material": "Prestressed concrete",
+      "name": "Batter pile, south",
+      "note": "",
+      "params": {
+       "batter": 0.1667,
+       "batter_dir": 270.0,
+       "shape": "octagonal",
+       "size": 2.0,
+       "tip_el": -65.0,
+       "top_el": 8.0,
+       "wall": 0.042
+      },
+      "rotate": 0.0,
+      "source": "library",
+      "type": "pile"
+     },
+     {
+      "at": [
+       0.0,
+       38.0,
+       0.0
+      ],
+      "id": "c5",
+      "kind": "batter pile",
+      "material": "Prestressed concrete",
+      "name": "Batter pile, north",
+      "note": "",
+      "params": {
+       "batter": 0.1667,
+       "batter_dir": 90.0,
+       "shape": "octagonal",
+       "size": 2.0,
+       "tip_el": -65.0,
+       "top_el": 8.0,
+       "wall": 0.042
+      },
+      "rotate": 0.0,
+      "source": "library",
+      "type": "pile"
+     }
+    ],
+    "id": "c1",
+    "kind": "pile bent",
+    "library_item": "Pile bent, 4 plumb and 2 batter piles",
+    "material": "",
+    "name": "Pile bent",
+    "note": "",
+    "params": {},
+    "rotate": 0.0,
+    "source": "library",
+    "type": "assembly"
+   },
+   "name": "Pile bent, 4 plumb and 2 batter piles",
+   "tags": "pier, wharf",
+   "units": "ft"
+  },
+  {
+   "category": "Assemblies",
+   "description": "16 ft square cap on four plumb and four battered 30 in pipe piles, with a hook and a cone fender.",
+   "item": {
+    "at": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "children": [
+     {
+      "at": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "id": "c2",
+      "kind": "dolphin cap",
+      "material": "Concrete",
+      "name": "Dolphin cap",
+      "note": "",
+      "params": {
+       "bottom_el": 8.0,
+       "length": 16.0,
+       "plan": "rectangle",
+       "top_el": 12.0,
+       "width": 16.0
+      },
+      "rotate": 0.0,
+      "source": "library",
+      "type": "block"
+     },
+     {
+      "at": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "id": "c3",
+      "kind": "bearing pile",
+      "material": "Steel",
+      "name": "Plumb piles",
+      "note": "",
+      "params": {
+       "batter": 0.0,
+       "batter_dir": 0.0,
+       "shape": "pipe",
+       "size": 2.5,
+       "tip_el": -70.0,
+       "top_el": 9.0,
+       "wall": 0.052
+      },
+      "positions": [
+       [
+        5.0,
+        5.0,
+        0.0
+       ],
+       [
+        -5.0,
+        5.0,
+        0.0
+       ],
+       [
+        -5.0,
+        -5.0,
+        0.0
+       ],
+       [
+        5.0,
+        -5.0,
+        0.0
+       ]
+      ],
+      "rotate": 0.0,
+      "source": "library",
+      "type": "pile"
+     },
+     {
+      "at": [
+       6.0,
+       0.0,
+       0.0
+      ],
+      "id": "c4",
+      "kind": "batter pile",
+      "material": "Steel",
+      "name": "Batter pile, east",
+      "note": "",
+      "params": {
+       "batter": 0.25,
+       "batter_dir": 0.0,
+       "shape": "pipe",
+       "size": 2.5,
+       "tip_el": -70.0,
+       "top_el": 9.0,
+       "wall": 0.052
+      },
+      "rotate": 0.0,
+      "source": "library",
+      "type": "pile"
+     },
+     {
+      "at": [
+       0.0,
+       6.0,
+       0.0
+      ],
+      "id": "c5",
+      "kind": "batter pile",
+      "material": "Steel",
+      "name": "Batter pile, north",
+      "note": "",
+      "params": {
+       "batter": 0.25,
+       "batter_dir": 90.0,
+       "shape": "pipe",
+       "size": 2.5,
+       "tip_el": -70.0,
+       "top_el": 9.0,
+       "wall": 0.052
+      },
+      "rotate": 0.0,
+      "source": "library",
+      "type": "pile"
+     },
+     {
+      "at": [
+       -6.0,
+       0.0,
+       0.0
+      ],
+      "id": "c6",
+      "kind": "batter pile",
+      "material": "Steel",
+      "name": "Batter pile, west",
+      "note": "",
+      "params": {
+       "batter": 0.25,
+       "batter_dir": 180.0,
+       "shape": "pipe",
+       "size": 2.5,
+       "tip_el": -70.0,
+       "top_el": 9.0,
+       "wall": 0.052
+      },
+      "rotate": 0.0,
+      "source": "library",
+      "type": "pile"
+     },
+     {
+      "at": [
+       0.0,
+       -6.0,
+       0.0
+      ],
+      "id": "c7",
+      "kind": "batter pile",
+      "material": "Steel",
+      "name": "Batter pile, south",
+      "note": "",
+      "params": {
+       "batter": 0.25,
+       "batter_dir": 270.0,
+       "shape": "pipe",
+       "size": 2.5,
+       "tip_el": -70.0,
+       "top_el": 9.0,
+       "wall": 0.052
+      },
+      "rotate": 0.0,
+      "source": "library",
+      "type": "pile"
+     },
+     {
+      "at": [
+       0.0,
+       0.0,
+       12.0
+      ],
+      "id": "c8",
+      "kind": "quick release hook",
+      "material": "",
+      "name": "Quick release hook",
+      "note": "",
+      "params": {
+       "capacity": "75 t",
+       "diameter": 4.0,
+       "height": 2.5
+      },
+      "rotate": 0.0,
+      "source": "library",
+      "type": "mooring"
+     },
+     {
+      "at": [
+       8.0,
+       0.0,
+       9.5
+      ],
+      "id": "c9",
+      "kind": "cone fender",
+      "material": "",
+      "name": "Cone fender",
+      "note": "",
+      "params": {
+       "height": 4.0,
+       "length": 4.0,
+       "projection": 4.0
+      },
+      "rotate": 0.0,
+      "source": "library",
+      "type": "fender"
+     }
+    ],
+    "id": "c1",
+    "kind": "dolphin",
+    "library_item": "Mooring dolphin, 8 pipe piles",
+    "material": "",
+    "name": "Mooring dolphin",
+    "note": "",
+    "params": {},
+    "rotate": 0.0,
+    "source": "library",
+    "type": "assembly"
+   },
+   "name": "Mooring dolphin, 8 pipe piles",
+   "tags": "dolphin",
+   "units": "ft"
+  }
+ ],
+ "models": [
+  {
+   "author": "",
+   "components": [
+    {
+     "array": {
+      "dx": 20.0,
+      "dy": 0.0,
+      "nx": 16,
+      "ny": 1
+     },
+     "at": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "children": [
+      {
+       "at": [
+        0.0,
+        0.0,
+        0.0
+       ],
+       "id": "c2",
+       "kind": "pile cap beam",
+       "material": "Concrete",
+       "name": "Cap beam",
+       "note": "Generic example value.",
+       "params": {
+        "depth": 3.0,
+        "path": [
+         [
+          0.0,
+          -1.0,
+          10.5
+         ],
+         [
+          0.0,
+          41.0,
+          10.5
+         ]
+        ],
+        "reference": "top",
+        "section": "rectangle",
+        "wall": 0.03,
+        "width": 4.0
+       },
+       "rotate": 0.0,
+       "source": "assumed",
+       "type": "beam"
+      },
+      {
+       "at": [
+        0.0,
+        0.0,
+        0.0
+       ],
+       "id": "c3",
+       "kind": "bearing pile",
+       "material": "Prestressed concrete",
+       "name": "Plumb piles",
+       "note": "Generic example value.",
+       "params": {
+        "batter": 0.0,
+        "batter_dir": 0.0,
+        "shape": "octagonal",
+        "size": 2.0,
+        "tip_el": -65.0,
+        "top_el": 8.0,
+        "wall": 0.042
+       },
+       "positions": [
+        [
+         0.0,
+         5.0,
+         0.0
+        ],
+        [
+         0.0,
+         15.0,
+         0.0
+        ],
+        [
+         0.0,
+         25.0,
+         0.0
+        ],
+        [
+         0.0,
+         35.0,
+         0.0
+        ]
+       ],
+       "rotate": 0.0,
+       "source": "assumed",
+       "type": "pile"
+      },
+      {
+       "at": [
+        0.0,
+        2.0,
+        0.0
+       ],
+       "id": "c4",
+       "kind": "batter pile",
+       "material": "Prestressed concrete",
+       "name": "Batter pile, south",
+       "note": "Generic example value.",
+       "params": {
+        "batter": 0.1667,
+        "batter_dir": 270.0,
+        "shape": "octagonal",
+        "size": 2.0,
+        "tip_el": -65.0,
+        "top_el": 8.0,
+        "wall": 0.042
+       },
+       "rotate": 0.0,
+       "source": "assumed",
+       "type": "pile"
+      },
+      {
+       "at": [
+        0.0,
+        38.0,
+        0.0
+       ],
+       "id": "c5",
+       "kind": "batter pile",
+       "material": "Prestressed concrete",
+       "name": "Batter pile, north",
+       "note": "Generic example value.",
+       "params": {
+        "batter": 0.1667,
+        "batter_dir": 90.0,
+        "shape": "octagonal",
+        "size": 2.0,
+        "tip_el": -65.0,
+        "top_el": 8.0,
+        "wall": 0.042
+       },
+       "rotate": 0.0,
+       "source": "assumed",
+       "type": "pile"
+      }
+     ],
+     "id": "c1",
+     "kind": "pile bent",
+     "material": "",
+     "name": "Pile bent",
+     "note": "Generic example value.",
+     "params": {},
+     "rotate": 0.0,
+     "source": "assumed",
+     "type": "assembly"
+    },
+    {
+     "at": [
+      -2.0,
+      -1.0,
+      0.0
+     ],
+     "id": "c6",
+     "kind": "deck",
+     "material": "Concrete",
+     "name": "Deck slab",
+     "note": "Generic example value.",
+     "params": {
+      "length": 304.0,
+      "outline": [],
+      "thickness": 1.5,
+      "top_el": 12.0,
+      "width": 42.0
+     },
+     "rotate": 0.0,
+     "source": "assumed",
+     "type": "slab"
+    },
+    {
+     "at": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "id": "c7",
+     "kind": "bullrail",
+     "material": "Timber",
+     "name": "Bullrail, south",
+     "note": "Generic example value.",
+     "params": {
+      "depth": 1.0,
+      "path": [
+       [
+        -2.0,
+        -0.5,
+        13.0
+       ],
+       [
+        302.0,
+        -0.5,
+        13.0
+       ]
+      ],
+      "reference": "top",
+      "section": "rectangle",
+      "wall": 0.03,
+      "width": 1.0
+     },
+     "rotate": 0.0,
+     "source": "assumed",
+     "type": "beam"
+    },
+    {
+     "at": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "id": "c8",
+     "kind": "bullrail",
+     "material": "Timber",
+     "name": "Bullrail, north",
+     "note": "Generic example value.",
+     "params": {
+      "depth": 1.0,
+      "path": [
+       [
+        -2.0,
+        40.5,
+        13.0
+       ],
+       [
+        302.0,
+        40.5,
+        13.0
+       ]
+      ],
+      "reference": "top",
+      "section": "rectangle",
+      "wall": 0.03,
+      "width": 1.0
+     },
+     "rotate": 0.0,
+     "source": "assumed",
+     "type": "beam"
+    },
+    {
+     "array": {
+      "dx": 40.0,
+      "dy": 0.0,
+      "nx": 7,
+      "ny": 1
+     },
+     "at": [
+      30.0,
+      2.5,
+      12.0
+     ],
+     "id": "c9",
+     "kind": "bollard",
+     "material": "",
+     "name": "Bollards",
+     "note": "Generic example value.",
+     "params": {
+      "capacity": "100 t",
+      "diameter": 1.8,
+      "height": 2.0
+     },
+     "rotate": 0.0,
+     "source": "assumed",
+     "type": "mooring"
+    },
+    {
+     "array": {
+      "dx": 20.0,
+      "dy": 0.0,
+      "nx": 15,
+      "ny": 1
+     },
+     "at": [
+      10.0,
+      -1.0,
+      9.0
+     ],
+     "id": "c10",
+     "kind": "arch fender",
+     "material": "",
+     "name": "Arch fenders",
+     "note": "Generic example value.",
+     "params": {
+      "height": 2.0,
+      "length": 6.0,
+      "projection": 1.5
+     },
+     "rotate": -90.0,
+     "source": "assumed",
+     "type": "fender"
+    }
+   ],
+   "datum": "MLLW",
+   "description": "A 300 ft x 42 ft pier on 16 pile bents at 20 ft. Generic sizes for trying the app.",
+   "name": "Example: pile-supported pier",
+   "project": "Examples",
+   "schema": "p2i-scene/1",
+   "source_drawings": "",
+   "structure_type": "Pier or jetty",
+   "units": "ft"
+  },
+  {
+   "author": "",
+   "components": [
+    {
+     "at": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "children": [
+      {
+       "at": [
+        0.0,
+        0.0,
+        0.0
+       ],
+       "id": "c2",
+       "kind": "dolphin cap",
+       "material": "Concrete",
+       "name": "Dolphin cap",
+       "note": "Generic example value.",
+       "params": {
+        "bottom_el": 8.0,
+        "length": 16.0,
+        "plan": "rectangle",
+        "top_el": 12.0,
+        "width": 16.0
+       },
+       "rotate": 0.0,
+       "source": "assumed",
+       "type": "block"
+      },
+      {
+       "at": [
+        0.0,
+        0.0,
+        0.0
+       ],
+       "id": "c3",
+       "kind": "bearing pile",
+       "material": "Steel",
+       "name": "Plumb piles",
+       "note": "Generic example value.",
+       "params": {
+        "batter": 0.0,
+        "batter_dir": 0.0,
+        "shape": "pipe",
+        "size": 2.5,
+        "tip_el": -70.0,
+        "top_el": 9.0,
+        "wall": 0.052
+       },
+       "positions": [
+        [
+         5.0,
+         5.0,
+         0.0
+        ],
+        [
+         -5.0,
+         5.0,
+         0.0
+        ],
+        [
+         -5.0,
+         -5.0,
+         0.0
+        ],
+        [
+         5.0,
+         -5.0,
+         0.0
+        ]
+       ],
+       "rotate": 0.0,
+       "source": "assumed",
+       "type": "pile"
+      },
+      {
+       "at": [
+        6.0,
+        0.0,
+        0.0
+       ],
+       "id": "c4",
+       "kind": "batter pile",
+       "material": "Steel",
+       "name": "Batter pile, east",
+       "note": "Generic example value.",
+       "params": {
+        "batter": 0.25,
+        "batter_dir": 0.0,
+        "shape": "pipe",
+        "size": 2.5,
+        "tip_el": -70.0,
+        "top_el": 9.0,
+        "wall": 0.052
+       },
+       "rotate": 0.0,
+       "source": "assumed",
+       "type": "pile"
+      },
+      {
+       "at": [
+        0.0,
+        6.0,
+        0.0
+       ],
+       "id": "c5",
+       "kind": "batter pile",
+       "material": "Steel",
+       "name": "Batter pile, north",
+       "note": "Generic example value.",
+       "params": {
+        "batter": 0.25,
+        "batter_dir": 90.0,
+        "shape": "pipe",
+        "size": 2.5,
+        "tip_el": -70.0,
+        "top_el": 9.0,
+        "wall": 0.052
+       },
+       "rotate": 0.0,
+       "source": "assumed",
+       "type": "pile"
+      },
+      {
+       "at": [
+        -6.0,
+        0.0,
+        0.0
+       ],
+       "id": "c6",
+       "kind": "batter pile",
+       "material": "Steel",
+       "name": "Batter pile, west",
+       "note": "Generic example value.",
+       "params": {
+        "batter": 0.25,
+        "batter_dir": 180.0,
+        "shape": "pipe",
+        "size": 2.5,
+        "tip_el": -70.0,
+        "top_el": 9.0,
+        "wall": 0.052
+       },
+       "rotate": 0.0,
+       "source": "assumed",
+       "type": "pile"
+      },
+      {
+       "at": [
+        0.0,
+        -6.0,
+        0.0
+       ],
+       "id": "c7",
+       "kind": "batter pile",
+       "material": "Steel",
+       "name": "Batter pile, south",
+       "note": "Generic example value.",
+       "params": {
+        "batter": 0.25,
+        "batter_dir": 270.0,
+        "shape": "pipe",
+        "size": 2.5,
+        "tip_el": -70.0,
+        "top_el": 9.0,
+        "wall": 0.052
+       },
+       "rotate": 0.0,
+       "source": "assumed",
+       "type": "pile"
+      },
+      {
+       "at": [
+        0.0,
+        0.0,
+        12.0
+       ],
+       "id": "c8",
+       "kind": "quick release hook",
+       "material": "",
+       "name": "Quick release hook",
+       "note": "Generic example value.",
+       "params": {
+        "capacity": "75 t",
+        "diameter": 4.0,
+        "height": 2.5
+       },
+       "rotate": 0.0,
+       "source": "assumed",
+       "type": "mooring"
+      },
+      {
+       "at": [
+        8.0,
+        0.0,
+        9.5
+       ],
+       "id": "c9",
+       "kind": "cone fender",
+       "material": "",
+       "name": "Cone fender",
+       "note": "Generic example value.",
+       "params": {
+        "height": 4.0,
+        "length": 4.0,
+        "projection": 4.0
+       },
+       "rotate": 0.0,
+       "source": "assumed",
+       "type": "fender"
+      }
+     ],
+     "id": "c1",
+     "kind": "dolphin",
+     "material": "",
+     "name": "Mooring dolphin",
+     "note": "Generic example value.",
+     "params": {},
+     "rotate": 0.0,
+     "source": "assumed",
+     "type": "assembly"
+    }
+   ],
+   "datum": "MLLW",
+   "description": "A single mooring dolphin on eight pipe piles.",
+   "name": "Example: mooring dolphin",
+   "project": "Examples",
+   "schema": "p2i-scene/1",
+   "source_drawings": "",
+   "structure_type": "Mooring or breasting dolphin",
+   "units": "ft"
+  },
+  {
+   "author": "",
+   "components": [
+    {
+     "array": {
+      "dx": 20.0,
+      "dy": 0.0,
+      "nx": 10,
+      "ny": 1
+     },
+     "at": [
+      10.0,
+      0.0,
+      0.0
+     ],
+     "id": "c1",
+     "kind": "pontoon",
+     "material": "Concrete float",
+     "name": "Main walkway floats",
+     "note": "Generic example value.",
+     "params": {
+      "bottom_el": -1.5,
+      "length": 20.0,
+      "plan": "rectangle",
+      "top_el": 1.5,
+      "width": 8.0
+     },
+     "rotate": 0.0,
+     "source": "assumed",
+     "type": "block"
+    },
+    {
+     "array": {
+      "dx": 40.0,
+      "dy": 0.0,
+      "nx": 5,
+      "ny": 1
+     },
+     "at": [
+      20.0,
+      19.0,
+      0.0
+     ],
+     "id": "c2",
+     "kind": "pontoon",
+     "material": "Concrete float",
+     "name": "Finger floats, north",
+     "note": "Generic example value.",
+     "params": {
+      "bottom_el": -1.0,
+      "length": 30.0,
+      "plan": "rectangle",
+      "top_el": 1.5,
+      "width": 4.0
+     },
+     "rotate": 90.0,
+     "source": "assumed",
+     "type": "block"
+    },
+    {
+     "array": {
+      "dx": 40.0,
+      "dy": 0.0,
+      "nx": 5,
+      "ny": 1
+     },
+     "at": [
+      20.0,
+      -19.0,
+      0.0
+     ],
+     "id": "c3",
+     "kind": "pontoon",
+     "material": "Concrete float",
+     "name": "Finger floats, south",
+     "note": "Generic example value.",
+     "params": {
+      "bottom_el": -1.0,
+      "length": 30.0,
+      "plan": "rectangle",
+      "top_el": 1.5,
+      "width": 4.0
+     },
+     "rotate": 90.0,
+     "source": "assumed",
+     "type": "block"
+    },
+    {
+     "array": {
+      "dx": 40.0,
+      "dy": 0.0,
+      "nx": 5,
+      "ny": 1
+     },
+     "at": [
+      40.0,
+      0.0,
+      0.0
+     ],
+     "id": "c4",
+     "kind": "guide pile",
+     "material": "Steel",
+     "name": "Guide piles, walkway",
+     "note": "Generic example value.",
+     "params": {
+      "batter": 0.0,
+      "batter_dir": 0.0,
+      "shape": "pipe",
+      "size": 1.333,
+      "tip_el": -40.0,
+      "top_el": 14.0,
+      "wall": 0.031
+     },
+     "rotate": 0.0,
+     "source": "assumed",
+     "type": "pile"
+    },
+    {
+     "array": {
+      "dx": 40.0,
+      "dy": 71.0,
+      "nx": 5,
+      "ny": 2
+     },
+     "at": [
+      23.0,
+      -35.5,
+      0.0
+     ],
+     "id": "c5",
+     "kind": "guide pile",
+     "material": "Steel",
+     "name": "Guide piles, finger ends",
+     "note": "Generic example value.",
+     "params": {
+      "batter": 0.0,
+      "batter_dir": 0.0,
+      "shape": "pipe",
+      "size": 1.333,
+      "tip_el": -40.0,
+      "top_el": 14.0,
+      "wall": 0.031
+     },
+     "rotate": 0.0,
+     "source": "assumed",
+     "type": "pile"
+    },
+    {
+     "array": {
+      "dx": 40.0,
+      "dy": 14.0,
+      "nx": 5,
+      "ny": 2
+     },
+     "at": [
+      21.5,
+      12.0,
+      1.5
+     ],
+     "id": "c6",
+     "kind": "cleat",
+     "material": "",
+     "name": "Cleats, north fingers",
+     "note": "Generic example value.",
+     "params": {
+      "capacity": "",
+      "diameter": 1.0,
+      "height": 0.6
+     },
+     "rotate": 0.0,
+     "source": "assumed",
+     "type": "mooring"
+    },
+    {
+     "array": {
+      "dx": 40.0,
+      "dy": 14.0,
+      "nx": 5,
+      "ny": 2
+     },
+     "at": [
+      21.5,
+      -26.0,
+      1.5
+     ],
+     "id": "c7",
+     "kind": "cleat",
+     "material": "",
+     "name": "Cleats, south fingers",
+     "note": "Generic example value.",
+     "params": {
+      "capacity": "",
+      "diameter": 1.0,
+      "height": 0.6
+     },
+     "rotate": 0.0,
+     "source": "assumed",
+     "type": "mooring"
+    },
+    {
+     "at": [
+      -48.0,
+      0.0,
+      0.0
+     ],
+     "id": "c8",
+     "kind": "footing",
+     "material": "Concrete",
+     "name": "Shore abutment",
+     "note": "Generic example value.",
+     "params": {
+      "bottom_el": 2.0,
+      "length": 10.0,
+      "plan": "rectangle",
+      "top_el": 9.0,
+      "width": 12.0
+     },
+     "rotate": 0.0,
+     "source": "assumed",
+     "type": "block"
+    },
+    {
+     "at": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "id": "c9",
+     "kind": "gangway",
+     "material": "Aluminium",
+     "name": "Gangway",
+     "note": "Generic example value.",
+     "params": {
+      "depth": 0.5,
+      "path": [
+       [
+        -43.0,
+        0.0,
+        9.5
+       ],
+       [
+        0.0,
+        0.0,
+        2.5
+       ]
+      ],
+      "reference": "top",
+      "section": "rectangle",
+      "wall": 0.03,
+      "width": 4.0
+     },
+     "rotate": 0.0,
+     "source": "assumed",
+     "type": "beam"
+    }
+   ],
+   "datum": "MLW",
+   "description": "A 200 ft main walkway with five finger piers each side, guide piles and a gangway.",
+   "name": "Example: marina floating dock",
+   "project": "Examples",
+   "schema": "p2i-scene/1",
+   "source_drawings": "",
+   "structure_type": "Marina or floating dock",
+   "units": "ft"
+  },
+  {
+   "author": "",
+   "components": [
+    {
+     "at": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "id": "c1",
+     "kind": "armour layer",
+     "material": "Armour rock",
+     "name": "Armour layer",
+     "note": "Generic example value.",
+     "params": {
+      "closed": "no",
+      "path": [
+       [
+        0.0,
+        0.0
+       ],
+       [
+        250.0,
+        0.0
+       ],
+       [
+        400.0,
+        60.0
+       ]
+      ],
+      "section": [
+       [
+        -76.0,
+        -20.0
+       ],
+       [
+        -8.0,
+        14.0
+       ],
+       [
+        8.0,
+        14.0
+       ],
+       [
+        76.0,
+        -20.0
+       ],
+       [
+        64.0,
+        -20.0
+       ],
+       [
+        6.0,
+        9.0
+       ],
+       [
+        -6.0,
+        9.0
+       ],
+       [
+        -64.0,
+        -20.0
+       ]
+      ]
+     },
+     "rotate": 0.0,
+     "source": "assumed",
+     "type": "section_sweep"
+    },
+    {
+     "at": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "id": "c2",
+     "kind": "underlayer",
+     "material": "Underlayer rock",
+     "name": "Underlayer",
+     "note": "Generic example value.",
+     "params": {
+      "closed": "no",
+      "path": [
+       [
+        0.0,
+        0.0
+       ],
+       [
+        250.0,
+        0.0
+       ],
+       [
+        400.0,
+        60.0
+       ]
+      ],
+      "section": [
+       [
+        -64.0,
+        -20.0
+       ],
+       [
+        -6.0,
+        9.0
+       ],
+       [
+        6.0,
+        9.0
+       ],
+       [
+        64.0,
+        -20.0
+       ],
+       [
+        54.0,
+        -20.0
+       ],
+       [
+        4.0,
+        5.0
+       ],
+       [
+        -4.0,
+        5.0
+       ],
+       [
+        -54.0,
+        -20.0
+       ]
+      ]
+     },
+     "rotate": 0.0,
+     "source": "assumed",
+     "type": "section_sweep"
+    },
+    {
+     "at": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "id": "c3",
+     "kind": "core",
+     "material": "Quarry run core",
+     "name": "Core",
+     "note": "Generic example value.",
+     "params": {
+      "closed": "no",
+      "path": [
+       [
+        0.0,
+        0.0
+       ],
+       [
+        250.0,
+        0.0
+       ],
+       [
+        400.0,
+        60.0
+       ]
+      ],
+      "section": [
+       [
+        -54.0,
+        -20.0
+       ],
+       [
+        -4.0,
+        5.0
+       ],
+       [
+        4.0,
+        5.0
+       ],
+       [
+        54.0,
+        -20.0
+       ]
+      ]
+     },
+     "rotate": 0.0,
+     "source": "assumed",
+     "type": "section_sweep"
+    },
+    {
+     "at": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "id": "c4",
+     "kind": "crown wall",
+     "material": "Concrete",
+     "name": "Crown wall",
+     "note": "Generic example value.",
+     "params": {
+      "closed": "no",
+      "path": [
+       [
+        0.0,
+        0.0
+       ],
+       [
+        250.0,
+        0.0
+       ],
+       [
+        400.0,
+        60.0
+       ]
+      ],
+      "section": [
+       [
+        -8.0,
+        14.0
+       ],
+       [
+        -5.0,
+        14.0
+       ],
+       [
+        -5.0,
+        18.0
+       ],
+       [
+        -8.0,
+        18.0
+       ]
+      ]
+     },
+     "rotate": 0.0,
+     "source": "assumed",
+     "type": "section_sweep"
+    }
+   ],
+   "datum": "MLLW",
+   "description": "A 410 ft breakwater with a dogleg: armour, underlayer, core and a crown wall.",
+   "name": "Example: rubble mound breakwater",
+   "project": "Examples",
+   "schema": "p2i-scene/1",
+   "source_drawings": "",
+   "structure_type": "Breakwater",
+   "units": "ft"
+  },
+  {
+   "author": "",
+   "components": [
+    {
+     "at": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "id": "c1",
+     "kind": "sheet pile wall",
+     "material": "Steel",
+     "name": "Sheet pile wall",
+     "note": "Generic example value.",
+     "params": {
+      "align": "centre",
+      "bottom_el": -35.0,
+      "closed": "no",
+      "path": [
+       [
+        0.0,
+        0.0
+       ],
+       [
+        200.0,
+        0.0
+       ]
+      ],
+      "thickness": 1.5,
+      "top_el": 9.0
+     },
+     "rotate": 0.0,
+     "source": "assumed",
+     "type": "wall"
+    },
+    {
+     "at": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "id": "c2",
+     "kind": "pile cap beam",
+     "material": "Concrete",
+     "name": "Concrete cap",
+     "note": "Generic example value.",
+     "params": {
+      "depth": 2.5,
+      "path": [
+       [
+        0.0,
+        0.0,
+        11.0
+       ],
+       [
+        200.0,
+        0.0,
+        11.0
+       ]
+      ],
+      "reference": "top",
+      "section": "rectangle",
+      "wall": 0.03,
+      "width": 3.0
+     },
+     "rotate": 0.0,
+     "source": "assumed",
+     "type": "beam"
+    },
+    {
+     "at": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "id": "c3",
+     "kind": "waler",
+     "material": "Steel",
+     "name": "Waler",
+     "note": "Generic example value.",
+     "params": {
+      "depth": 1.0,
+      "path": [
+       [
+        0.0,
+        1.3,
+        4.0
+       ],
+       [
+        200.0,
+        1.3,
+        4.0
+       ]
+      ],
+      "reference": "centre",
+      "section": "rectangle",
+      "wall": 0.03,
+      "width": 1.0
+     },
+     "rotate": 0.0,
+     "source": "assumed",
+     "type": "beam"
+    },
+    {
+     "array": {
+      "dx": 10.0,
+      "dy": 0.0,
+      "nx": 20,
+      "ny": 1
+     },
+     "at": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "id": "c4",
+     "kind": "tie rod",
+     "material": "Steel",
+     "name": "Tie rods",
+     "note": "Generic example value.",
+     "params": {
+      "depth": 3.0,
+      "path": [
+       [
+        5.0,
+        0.8,
+        4.0
+       ],
+       [
+        5.0,
+        45.0,
+        4.0
+       ]
+      ],
+      "reference": "centre",
+      "section": "round",
+      "wall": 0.03,
+      "width": 0.21
+     },
+     "rotate": 0.0,
+     "source": "assumed",
+     "type": "beam"
+    },
+    {
+     "at": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "id": "c5",
+     "kind": "deadman wall",
+     "material": "Concrete",
+     "name": "Deadman wall",
+     "note": "Generic example value.",
+     "params": {
+      "align": "centre",
+      "bottom_el": -1.0,
+      "closed": "no",
+      "path": [
+       [
+        0.0,
+        45.75
+       ],
+       [
+        200.0,
+        45.75
+       ]
+      ],
+      "thickness": 1.5,
+      "top_el": 7.0
+     },
+     "rotate": 0.0,
+     "source": "assumed",
+     "type": "wall"
+    }
+   ],
+   "datum": "MLLW",
+   "description": "A 200 ft anchored sheet pile bulkhead with a cap, waler, tie rods and a deadman wall.",
+   "name": "Example: sheet pile bulkhead with tie-backs",
+   "project": "Examples",
+   "schema": "p2i-scene/1",
+   "source_drawings": "",
+   "structure_type": "Bulkhead",
+   "units": "ft"
+  },
+  {
+   "author": "",
+   "components": [
+    {
+     "at": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "id": "c1",
+     "kind": "floor",
+     "material": "Concrete",
+     "name": "Dock floor slab",
+     "note": "18 ft slab, finished floor EL -37.3. Dry Dock No. 5 general dredging plan, dwg P-2SD-199.",
+     "params": {
+      "closed": "no",
+      "path": [
+       [
+        0.0,
+        0.0
+       ],
+       [
+        1111.33,
+        0.0
+       ]
+      ],
+      "section": [
+       [
+        -75.0,
+        -55.3
+       ],
+       [
+        75.0,
+        -55.3
+       ],
+       [
+        75.0,
+        -37.3
+       ],
+       [
+        -75.0,
+        -37.3
+       ]
+      ]
+     },
+     "rotate": 0.0,
+     "source": "dimensioned",
+     "type": "section_sweep"
+    },
+    {
+     "at": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "id": "c2",
+     "kind": "dock wall",
+     "material": "Concrete",
+     "name": "Side wall, right",
+     "note": "17 ft gross thickness = 97 - 5 - 75; coping EL +14.0.",
+     "params": {
+      "closed": "no",
+      "path": [
+       [
+        0.0,
+        0.0
+       ],
+       [
+        1111.33,
+        0.0
+       ]
+      ],
+      "section": [
+       [
+        75.0,
+        -55.3
+       ],
+       [
+        92.0,
+        -55.3
+       ],
+       [
+        92.0,
+        14.0
+       ],
+       [
+        75.0,
+        14.0
+       ]
+      ]
+     },
+     "rotate": 0.0,
+     "source": "derived",
+     "type": "section_sweep"
+    },
+    {
+     "at": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "id": "c3",
+     "kind": "dock wall",
+     "material": "Concrete",
+     "name": "Side wall, left",
+     "note": "17 ft gross thickness = 97 - 5 - 75; coping EL +14.0.",
+     "params": {
+      "closed": "no",
+      "path": [
+       [
+        0.0,
+        0.0
+       ],
+       [
+        1111.33,
+        0.0
+       ]
+      ],
+      "section": [
+       [
+        -92.0,
+        -55.3
+       ],
+       [
+        -75.0,
+        -55.3
+       ],
+       [
+        -75.0,
+        14.0
+       ],
+       [
+        -92.0,
+        14.0
+       ]
+      ]
+     },
+     "rotate": 0.0,
+     "source": "derived",
+     "type": "section_sweep"
+    },
+    {
+     "at": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "id": "c4",
+     "kind": "dock wall",
+     "material": "Concrete",
+     "name": "Head wall",
+     "note": "14 ft 8 in body, Section DD.",
+     "params": {
+      "closed": "no",
+      "path": [
+       [
+        -14.67,
+        0.0
+       ],
+       [
+        0.0,
+        0.0
+       ]
+      ],
+      "section": [
+       [
+        -92.0,
+        -55.3
+       ],
+       [
+        92.0,
+        -55.3
+       ],
+       [
+        92.0,
+        14.0
+       ],
+       [
+        -92.0,
+        14.0
+       ]
+      ]
+     },
+     "rotate": 0.0,
+     "source": "dimensioned",
+     "type": "section_sweep"
+    },
+    {
+     "at": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "id": "c5",
+     "kind": "bedding",
+     "material": "Gravel",
+     "name": "Gravel bed",
+     "note": "2 ft minimum gravel fill.",
+     "params": {
+      "closed": "no",
+      "path": [
+       [
+        -19.67,
+        0.0
+       ],
+       [
+        1111.33,
+        0.0
+       ]
+      ],
+      "section": [
+       [
+        -97.0,
+        -57.3
+       ],
+       [
+        97.0,
+        -57.3
+       ],
+       [
+        97.0,
+        -55.3
+       ],
+       [
+        -97.0,
+        -55.3
+       ]
+      ]
+     },
+     "rotate": 0.0,
+     "source": "dimensioned",
+     "type": "section_sweep"
+    },
+    {
+     "at": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "id": "c6",
+     "kind": "cutoff wall",
+     "material": "Steel",
+     "name": "Cutoff sheet piling",
+     "note": "Tip elevation is not annotated; scaled from Section CC.",
+     "params": {
+      "align": "centre",
+      "bottom_el": -78.0,
+      "closed": "no",
+      "path": [
+       [
+        1111.58,
+        -92.0
+       ],
+       [
+        1111.58,
+        92.0
+       ]
+      ],
+      "thickness": 0.5,
+      "top_el": -37.3
+     },
+     "rotate": 0.0,
+     "source": "scaled",
+     "type": "wall"
+    },
+    {
+     "at": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "id": "c7",
+     "kind": "dredge cut",
+     "material": "",
+     "name": "Dredge limit",
+     "note": "Bottom EL -57.3, toe 97 ft each side, slopes 1 on 1 3/4 to EL +11. Head-end slope not modelled.",
+     "params": {
+      "closed": "no",
+      "path": [
+       [
+        -19.67,
+        0.0
+       ],
+       [
+        1111.33,
+        0.0
+       ]
+      ],
+      "section": [
+       [
+        -97.0,
+        -57.3
+       ],
+       [
+        97.0,
+        -57.3
+       ],
+       [
+        216.5,
+        11.0
+       ],
+       [
+        -216.5,
+        11.0
+       ]
+      ]
+     },
+     "rotate": 0.0,
+     "source": "dimensioned",
+     "type": "section_sweep"
+    }
+   ],
+   "datum": "Yard datum EL 0.00",
+   "description": "Dock chamber, walls, gravel bed, cutoff sheet piling and dredge limit. Station runs along x from the inside face of the head wall. Sill grooves, culvert thickening and galleries are not modelled.",
+   "name": "Example: dry dock (Dry Dock No. 5 values)",
+   "project": "Examples",
+   "schema": "p2i-scene/1",
+   "source_drawings": "P-2SD-199 (Bureau Y&D 273,080), Rev A",
+   "structure_type": "Dry dock",
+   "units": "ft"
+  }
+ ]
+}

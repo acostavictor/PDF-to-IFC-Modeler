@@ -1,50 +1,119 @@
 # PDF to IFC Modeler
 
-A small web app that turns engineering drawings (PDF) into an IFC 3D model, with a person checking every
-dimension on the way.
+A web app for building IFC 3D models of marine and waterfront structures (piers, wharves, dolphins, marinas,
+breakwaters, bulkheads, dry docks) from PDF drawings, and for keeping those models and their parts in a
+database so the next project starts from the last one.
 
-1. **Choose a structure type.** Each type is a parametric template.
-2. **Add the drawings.** The PDF is opened in your browser. The pages you pick are cut into an overview plus
-   overlapping close-ups and sent to an AI model (Claude), which proposes each dimension and says whether it
-   was written on the drawing, calculated, or measured from the scan.
-3. **Review and build.** Every value sits beside the drawing with its source. Correct what is wrong, then
-   download the IFC file. Values you have not replaced are flagged as example values.
+## How it works
 
-The app does not turn an arbitrary drawing into a model on its own. It fills in a template, and a person
-approves the numbers.
+Every model is a list of **components** drawn from nine building blocks. Whatever fills that list, the same
+engine checks it, draws it in 3D and writes the IFC file.
 
-## Structure types
+```
+ PDF drawings ──▶ AI proposes components ─┐
+ Words ("timber pier 120 ft by 16 ft…") ──┤
+ A saved model, copied and adjusted ──────┼──▶ component list ──▶ 3D preview ──▶ IFC file
+ Parts from the library ──────────────────┤        ▲     │
+ Components added by hand ────────────────┘        │     ▼
+                                              you edit   saved to the database
+```
 
-| Type | What it builds | Units | Extra output |
-|---|---|---|---|
-| Sloped strut gate | Inclined skin plate, plate girders, bulb-flat stiffeners, struts, ties, catwalk, dock context | mm | STAAD.Pro input file (`.std`) |
-| Floating caisson gate | Shell, keel and stems, decks, stringers, bulkheads, major frames, ballast, valve markers | ft | |
-| Dry dock structure | Floor, side walls, head wall, sill with caisson grooves, gravel bed, sheet piling, dredge limit | ft | |
+1. **Start.** Load a PDF and let the AI propose components from the sheets you pick, describe the structure
+   in words, open a saved model, or start empty.
+2. **Check.** The model appears in 3D beside the drawings. Each component records where its sizes came from
+   (written on the drawing, calculated, measured from the scan, assumed, or from the library) with a note.
+   Colour the model by source to see what still rests on assumptions. Edit any value and the model redraws.
+3. **Save and reuse.** Save the model to the database. Save any component or assembly (a pile bent, a
+   dolphin, a fender system) to the library and insert it into later models; units are converted on the way.
+4. **Export.** Download IFC2x3 or IFC 4.3.
 
-The default values of each type reproduce a worked example (Dry Dock No. 4 intermediate gate, Dry Dock No. 4
-caisson, Dry Dock No. 5).
+### Building blocks
+
+| Block | Used for |
+|---|---|
+| Pile | Bearing, batter, fender, guide and sheet-wall king piles: round, pipe, square, octagonal or H; plumb or battered |
+| Block | Pile caps, dolphin caps, pontoons, mooring blocks, deadmen |
+| Slab | Decks, aprons, relieving platforms, floors, ramps; rectangle or any outline |
+| Beam or linear member | Cap beams, stringers, walers, bullrails, tie rods, braces, gangways |
+| Wall | Sheet pile walls, bulkheads, seawalls, quay walls, wave walls |
+| Swept cross-section | Breakwater and revetment layers, gravity walls, dock walls, dredge cuts: any section along a line |
+| Fender | Cylindrical, arch, cone, cell and D fenders (simplified shapes) |
+| Mooring fitting | Bollards, cleats, bitts, quick release hooks (simplified shapes) |
+| Assembly | A group of the above placed and repeated as one unit |
+
+Any component can be repeated on a grid or at listed positions.
+
+### What "any structure" means here
+
+Anything you can describe with those blocks. Straight members, prisms and constant sections along a line are
+exact. Curved members, tapered sections, connection details, reinforcement and mechanical equipment are not
+modelled; the AI is told to list what it left out rather than invent it. The AI's output is a proposal: it
+can misread a dimension or a scale, which is why every component carries its source and sits next to the
+drawing for checking.
+
+## The database
+
+- **Models.** Each saved model keeps its full component list, so it can be reopened, adjusted and saved as
+  a copy for a new project. Search by name, project, structure type or description.
+- **Library.** Reusable components and assemblies, grouped by category and searchable by name or tag.
+- A new database starts with 26 library items and 6 example models (pier, mooring dolphin, marina dock,
+  rubble mound breakwater, sheet pile bulkhead, dry dock). The example sizes are generic, not design values.
+- It is one SQLite file, by default `~/.pdf2ifc/pdf2ifc.sqlite3`, outside the web folder. Back it up by
+  copying that file.
 
 ## Output
 
-- **IFC2x3, Coordination View 2.0.** Chosen because it is the schema most widely read by BIM and structural tools.
-- Every element carries a `DrawingSource` property set with the weakest source among the values it was built
-  from. The building carries a `ModelInputs` property set listing every input, its value and its source.
-- Element ids are stable: the same inputs give the same file.
+| Choice | Use it when | Contents |
+|---|---|---|
+| **IFC2x3** (default) | Revit, Navisworks, STAAD and most viewers | `IfcPile`, `IfcBeam`, `IfcSlab`, `IfcWall`, `IfcFooting`, `IfcMember`; fenders and mooring fittings as `IfcDiscreteAccessory`; rock layers as proxies |
+| **IFC 4.3** | The receiving tool reads 4.3 and you want marine classes | `IfcMarineFacility`, `IfcMooringDevice`, `IfcImpactProtectionDevice`, `IfcCourse` (armour, core, filter), `IfcEarthworksFill` |
+
+Assemblies become `IfcElementAssembly`. Every element carries a `P2I_Component` property set with its
+source, note, material and library origin. The 3D preview and the IFC file are produced from the same
+geometry, and the tests confirm they have the same extents.
+
+## Preview site
+
+https://acostavictor.github.io/PDF-to-IFC-Modeler/ is this repository served by GitHub Pages. Pages cannot
+run the Python server, so the page switches to **preview mode**: the Python engine is loaded into the browser
+with Pyodide.
+
+| | Preview site | Server version |
+|---|---|---|
+| Build, edit, 3D preview, IFC export | Yes | Yes |
+| View a PDF beside the model | Yes | Yes |
+| Saved models and library | In that browser only | Shared SQLite database |
+| Build with AI | No | Yes |
+
+AI is left out of preview mode because an API key cannot be kept secret in a public page. The first visit
+downloads about 13 MB (Pyodide, from the jsDelivr CDN).
 
 ## Status
 
-- The IFC files of all three types pass IfcOpenShell schema validation, and every element produces geometry.
-- The browser flow (sign in, open a PDF, cut pages into images, fill the form, download) was tested in
-  Chromium against a stand-in for the Claude API.
-- **Not yet tested:** a real call to the Claude API, running on HostGator, and opening the STAAD file in
-  STAAD.Pro. How well the AI reads a given drawing set is unknown until you try it; the review step exists
-  for that reason.
+Tested:
+
+- 44 unit tests on Python 3.8 and 3.13. With IfcOpenShell installed, every example model and library item
+  is exported in both schemas, validated against the schema, checked to produce geometry for every piece,
+  and compared with the preview's extents.
+- The browser flows in Chromium: open, edit, save, library insert, unit change, export, sign-in, and
+  building with AI against a stand-in for the Claude API. Preview mode was tested with the repository
+  served as static files.
+
+Not yet tested:
+
+- **A real call to the Claude API.** `tools/setup_server.py --ai-test` makes one from your server with your
+  key. How well it reads a given drawing set is unknown until you try it.
+- **A real call to the Gemini API.** The adapter is tested against a stand-in only; no live Gemini call has
+  been made yet. Check the model name in AI Studio first, because Google retires and renames models.
+- **Running on HostGator**, including whether its Python has the `sqlite3` module (`/api/health` reports it).
+- **Opening the exports in Revit, Navisworks or STAAD.** Only IfcOpenShell has read them.
 
 ## Requirements
 
-- **Server:** Python 3, standard library only, with no packages to install. It runs as plain CGI. Written for 3.6 and newer; tested on 3.8, 3.11 and 3.13.
-- **Browser:** a current Chrome, Edge, Firefox or Safari.
-- **AI reading (optional):** an Anthropic API key. Each reading is billed to that key.
+- **Server:** Python 3 with the standard library only. Runs as plain CGI. Written for 3.6+; tested on 3.8 and 3.13.
+- **Browser:** a current Chrome, Edge, Firefox or Safari with WebGL.
+- **AI (optional):** an Anthropic API key, or a Google Gemini API key (free tier). Each run is billed to that
+  key, or free on the Gemini free tier.
 
 ## Run it locally
 
@@ -52,8 +121,22 @@ caisson, Dry Dock No. 5).
 python3 tools/dev_server.py
 ```
 
-Open http://localhost:8000/. Without configuration you can fill in values by hand and build models. To turn on
-AI reading, copy `config.example.json` to `config.local.json` and fill it in.
+Open http://localhost:8000/. On your own machine the database works without a password.
+
+To turn on AI with Claude, run the set-up script. It asks for your Anthropic API key and a password without showing
+them, saves them to a private file outside the repository, and checks the machine, including a free call
+that proves the key and the connection:
+
+```
+python3 tools/setup_server.py              # set up and check
+python3 tools/setup_server.py --check      # check only
+python3 tools/setup_server.py --check --ai-test    # also one small real AI run, billed to your key
+```
+
+To use Gemini instead, set `AI_PROVIDER` to `gemini` and `GEMINI_API_KEY` to a key from
+[Google AI Studio](https://aistudio.google.com/apikey) (free tier, no card), then run
+`python3 tools/setup_server.py --check` to prove the connection. The set-up script checks whichever provider
+is configured. Model names change often, so check the name in AI Studio before relying on `GEMINI_MODEL`.
 
 ## Configuration
 
@@ -63,38 +146,55 @@ a public server.
 
 | Key | Purpose | Default |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | Your Anthropic API key. Needed for AI reading. | none |
-| `APP_PASSWORD` | Password for the app. AI reading stays off until this is set. | none |
+| `APP_PASSWORD` | Password for the app. On a public server the database and AI stay off until this is set. | none |
+| `AI_PROVIDER` | Which AI service reads the drawings: `anthropic` or `gemini`. | `anthropic` |
+| `ANTHROPIC_API_KEY` | Your Anthropic API key. Needed for AI when the provider is `anthropic`. | none |
+| `GEMINI_API_KEY` | Your Gemini API key. Needed for AI when the provider is `gemini`. Free tier at Google AI Studio. | none |
+| `GEMINI_MODEL` | Gemini model used to read drawings. Check the name in AI Studio; Google renames models. | `gemini-3.8-flash` |
+| `GEMINI_URL` | OpenAI-compatible endpoint for Gemini. Change it, with the key and model, to use another OpenAI-compatible provider. | `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions` |
+| `DB_PATH` | Where the SQLite file lives. | `~/.pdf2ifc/pdf2ifc.sqlite3` |
 | `ANTHROPIC_MODEL` | Model used to read drawings. | `claude-opus-5-5` |
 | `ANTHROPIC_VERSION` | Value of the `anthropic-version` header. | `2026-10-21` |
-| `MAX_IMAGES` | Most images accepted per reading. | 60 |
+| `MAX_IMAGES` | Most images accepted per run. | 60 |
 | `MAX_BODY_MB` | Largest upload accepted. | 60 |
 | `REQUEST_TIMEOUT` | Seconds to wait for the AI model. | 280 |
-| `MAX_OUTPUT_TOKENS` | Output limit for one reading. | 8000 |
+| `MAX_OUTPUT_TOKENS` | Output limit for one run. Raise it if large models are cut off. | 16000 |
 | `SECRET_KEY` | Signs the sign-in cookie. Derived from the password and key if empty. | none |
+
+There is one shared password and no user accounts; everyone who has it sees and can change the same database.
 
 ## Deploying
 
-See [docs/DEPLOY_HOSTGATOR.md](docs/DEPLOY_HOSTGATOR.md) for shared cPanel hosting.
+See [docs/DEPLOY_HOSTGATOR.md](docs/DEPLOY_HOSTGATOR.md) for shared cPanel hosting. In short: clone the
+repository into a folder under `public_html`, run `python3 tools/setup_server.py` there, and open the folder's
+address over HTTPS.
+
+Long AI runs: shared hosts stop a request whose script stays silent, so the server sends a keep-alive byte
+every 10 seconds while the AI model works. A host's hard limit on total request time still applies.
 
 ## Privacy
 
-The PDF never leaves the browser as a file. The page images you choose to read are posted to your server and
-forwarded to the Anthropic API; nothing is stored on the server. Do not read drawings you are not allowed to
-send to a third-party service.
+The PDF never leaves the browser as a file. The page images you choose are posted to your server and
+forwarded to the configured AI provider (Anthropic or Gemini); they are not stored. Saved models and library items are stored in the
+database. Do not send drawings you are not allowed to share with a third-party service. On the Gemini free
+tier, Google may use what you send to train its models, so client-confidential drawings do not belong there.
 
 ## Layout
 
 ```
-index.html, static/        the page, its script and styles, and a vendored copy of PDF.js
+index.html, static/        the page, its script, the 3D viewer, and vendored PDF.js and three.js
 index.cgi                  CGI entry point (shared hosting)
 passenger_wsgi.py          entry point for hosts that use Passenger
-app/server.py              routes: health, login, templates, extract, generate
-app/extract.py             the Claude API request and response handling
-app/ifc/                   dependency-free IFC2x3 writer and modelling helpers
-app/templates/             one module per structure type, plus the STAAD exporter
-tests/                     unit tests (python3 -m unittest discover -s tests)
-tools/                     local server; IFC validation with IfcOpenShell (developer only)
+app/scene.py               the model format: building blocks, checking, unit conversion
+app/geometry.py            turns components into solids (shared by the preview and the IFC export)
+app/mesh.py                solids to triangles for the 3D preview
+app/ifcexport.py, app/ifc/ solids to IFC; dependency-free IFC writer
+app/db.py, app/seed.json   SQLite storage; starter library and example models
+app/ai.py                  the AI request, prompt and response handling (Claude, or Gemini through its OpenAI-compatible endpoint)
+app/server.py              routes; app/browser.py is the same engine for the preview site
+tests/                     unit tests
+tools/setup_server.py      writes the private config and checks a server, including the Claude connection
+tools/                     local server, seed generator, IFC validation with IfcOpenShell (developer only)
 ```
 
 ## Tests
@@ -104,14 +204,21 @@ python3 -m unittest discover -s tests
 pip install ifcopenshell && VALIDATE_IFC=1 python3 -m unittest discover -s tests
 ```
 
-The second line also validates the generated IFC files against the schema.
+## Extending
 
-## Adding a structure type
+- **A new building block:** add its inputs to `TYPES` in `app/scene.py`, a builder in `app/geometry.py` and
+  an IFC class in `app/ifcexport.py`. The editor form, the AI prompt and the tool schema are generated from
+  `TYPES`.
+- **More starter content:** edit `tools/make_seed.py` and run it. Existing databases are not re-seeded.
 
-Add a module in `app/templates/` with `ID`, `TITLE`, `SUMMARY`, `UNIT`, `LOOK_FOR`, a `PARAMS` list and a
-`build(params, meta)` function that returns IFC text, then register it in `app/templates/__init__.py`. The
-form, the AI prompt and the tool schema are generated from `PARAMS`.
+## Earlier version
+
+The first version built three fixed structure types (sloped strut gate with a STAAD export, floating caisson
+gate, dry dock) from templates. It is kept on the branch `v1-templates`. Of those, the dry dock can be built
+with the current blocks and is one of the examples; the two gates relied on purpose-built steel framing
+that the general blocks do not reproduce.
 
 ## Third-party code
 
-`static/vendor/pdfjs` is PDF.js 6.2.108 (Apache-2.0), unmodified.
+`static/vendor/pdfjs` is PDF.js 6.2.108 (Apache-2.0) and `static/vendor/three` is three.js 0.187.0 (MIT),
+both unmodified.
