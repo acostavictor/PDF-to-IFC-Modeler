@@ -185,7 +185,7 @@ pip install ifcopenshell && VALIDATE_IFC=1 python3 -m unittest discover -s tests
 ## Earlier version
 
 The first version built three fixed structure types (sloped strut gate with a STAAD export, floating caisson
-gate, dry dock) from templates. It is kept at the tag `v1-templates`. Of those, the dry dock can be built
+gate, dry dock) from templates. It is kept on the branch `v1-templates`. Of those, the dry dock can be built
 with the current blocks and is one of the examples; the two gates relied on purpose-built steel framing
 that the general blocks do not reproduce.
 
