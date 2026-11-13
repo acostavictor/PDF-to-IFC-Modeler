@@ -103,6 +103,8 @@ Not yet tested:
 
 - **A real call to the Claude API.** `tools/setup_server.py --ai-test` makes one from your server with your
   key. How well it reads a given drawing set is unknown until you try it.
+- **A real call to the Gemini API.** The adapter is tested against a stand-in only; no live Gemini call has
+  been made yet. Check the model name in AI Studio first, because Google retires and renames models.
 - **Running on HostGator**, including whether its Python has the `sqlite3` module (`/api/health` reports it).
 - **Opening the exports in Revit, Navisworks or STAAD.** Only IfcOpenShell has read them.
 
@@ -110,7 +112,8 @@ Not yet tested:
 
 - **Server:** Python 3 with the standard library only. Runs as plain CGI. Written for 3.6+; tested on 3.8 and 3.13.
 - **Browser:** a current Chrome, Edge, Firefox or Safari with WebGL.
-- **AI (optional):** an Anthropic API key. Each run is billed to that key.
+- **AI (optional):** an Anthropic API key, or a Google Gemini API key (free tier). Each run is billed to that
+  key, or free on the Gemini free tier.
 
 ## Run it locally
 
@@ -120,7 +123,7 @@ python3 tools/dev_server.py
 
 Open http://localhost:8000/. On your own machine the database works without a password.
 
-To turn on AI, run the set-up script. It asks for your Anthropic API key and a password without showing
+To turn on AI with Claude, run the set-up script. It asks for your Anthropic API key and a password without showing
 them, saves them to a private file outside the repository, and checks the machine, including a free call
 that proves the key and the connection:
 
@@ -129,6 +132,11 @@ python3 tools/setup_server.py              # set up and check
 python3 tools/setup_server.py --check      # check only
 python3 tools/setup_server.py --check --ai-test    # also one small real AI run, billed to your key
 ```
+
+To use Gemini instead, set `AI_PROVIDER` to `gemini` and `GEMINI_API_KEY` to a key from
+[Google AI Studio](https://aistudio.google.com/apikey) (free tier, no card), then run
+`python3 tools/setup_server.py --check` to prove the connection. The set-up script checks whichever provider
+is configured. Model names change often, so check the name in AI Studio before relying on `GEMINI_MODEL`.
 
 ## Configuration
 
@@ -139,7 +147,11 @@ a public server.
 | Key | Purpose | Default |
 |---|---|---|
 | `APP_PASSWORD` | Password for the app. On a public server the database and AI stay off until this is set. | none |
-| `ANTHROPIC_API_KEY` | Your Anthropic API key. Needed for AI. | none |
+| `AI_PROVIDER` | Which AI service reads the drawings: `anthropic` or `gemini`. | `anthropic` |
+| `ANTHROPIC_API_KEY` | Your Anthropic API key. Needed for AI when the provider is `anthropic`. | none |
+| `GEMINI_API_KEY` | Your Gemini API key. Needed for AI when the provider is `gemini`. Free tier at Google AI Studio. | none |
+| `GEMINI_MODEL` | Gemini model used to read drawings. Check the name in AI Studio; Google renames models. | `gemini-2.5-flash` |
+| `GEMINI_URL` | OpenAI-compatible endpoint for Gemini. Change it, with the key and model, to use another OpenAI-compatible provider. | `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions` |
 | `DB_PATH` | Where the SQLite file lives. | `~/.pdf2ifc/pdf2ifc.sqlite3` |
 | `ANTHROPIC_MODEL` | Model used to read drawings. | `claude-opus-5-5` |
 | `ANTHROPIC_VERSION` | Value of the `anthropic-version` header. | `2026-10-21` |
@@ -158,13 +170,14 @@ repository into a folder under `public_html`, run `python3 tools/setup_server.py
 address over HTTPS.
 
 Long AI runs: shared hosts stop a request whose script stays silent, so the server sends a keep-alive byte
-every 10 seconds while Claude works. A host's hard limit on total request time still applies.
+every 10 seconds while the AI model works. A host's hard limit on total request time still applies.
 
 ## Privacy
 
 The PDF never leaves the browser as a file. The page images you choose are posted to your server and
-forwarded to the Anthropic API; they are not stored. Saved models and library items are stored in the
-database. Do not send drawings you are not allowed to share with a third-party service.
+forwarded to the configured AI provider (Anthropic or Gemini); they are not stored. Saved models and library items are stored in the
+database. Do not send drawings you are not allowed to share with a third-party service. On the Gemini free
+tier, Google may use what you send to train its models, so client-confidential drawings do not belong there.
 
 ## Layout
 
@@ -177,7 +190,7 @@ app/geometry.py            turns components into solids (shared by the preview a
 app/mesh.py                solids to triangles for the 3D preview
 app/ifcexport.py, app/ifc/ solids to IFC; dependency-free IFC writer
 app/db.py, app/seed.json   SQLite storage; starter library and example models
-app/ai.py                  the Claude API request, prompt and response handling
+app/ai.py                  the AI request, prompt and response handling (Claude, or Gemini through its OpenAI-compatible endpoint)
 app/server.py              routes; app/browser.py is the same engine for the preview site
 tests/                     unit tests
 tools/setup_server.py      writes the private config and checks a server, including the Claude connection

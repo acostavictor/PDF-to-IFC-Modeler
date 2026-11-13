@@ -16,7 +16,8 @@ sys.path.insert(0, ROOT)
 from app import ai, auth, config, db, scene, server  # noqa: E402
 from app.scene import SceneError  # noqa: E402
 
-KEYS = ("ANTHROPIC_API_KEY", "APP_PASSWORD", "PDF2IFC_CONFIG", "ANTHROPIC_URL", "MAX_IMAGES", "DB_PATH", "MAX_BODY_MB", "SECRET_KEY")
+KEYS = ("ANTHROPIC_API_KEY", "GEMINI_API_KEY", "AI_PROVIDER", "GEMINI_MODEL", "GEMINI_URL", "APP_PASSWORD", "PDF2IFC_CONFIG",
+        "ANTHROPIC_URL", "MAX_IMAGES", "DB_PATH", "MAX_BODY_MB", "SECRET_KEY")
 PIER = {"name": "Test pier", "project": "Harbour job", "structure_type": "Pier or jetty", "units": "ft", "components": [
     {"type": "pile", "name": "Piles", "array": {"nx": 4, "dx": 10, "ny": 2, "dy": 8}, "params": {}},
     {"type": "slab", "name": "Deck", "params": {}}]}
@@ -102,10 +103,23 @@ def tool_reply(payload, stop="tool_use"):
             "content": [{"type": "text", "text": "Here it is."}, {"type": "tool_use", "id": "t", "name": ai.TOOL, "input": payload}]}
 
 
+def openai_reply(payload=None, finish="tool_calls", content=None):
+    calls = []
+    if payload is not None:
+        calls = [{"id": "c", "type": "function", "function": {"name": ai.TOOL, "arguments": json.dumps(payload)}}]
+    return {"model": "gemini-2.5-flash", "usage": {"prompt_tokens": 20, "completion_tokens": 8, "total_tokens": 28},
+            "choices": [{"finish_reason": finish, "message": {"role": "assistant", "content": content, "tool_calls": calls}}]}
+
+
 class AiTest(Env):
     def cfg(self, **over):
         os.environ["ANTHROPIC_API_KEY"] = "sk-test"
         cfg = config.load()
+        cfg.update(over)
+        return cfg
+
+    def gemini_cfg(self, **over):
+        cfg = self.cfg(AI_PROVIDER="gemini", GEMINI_API_KEY="gem-test", GEMINI_MODEL="gemini-2.5-flash")
         cfg.update(over)
         return cfg
 
@@ -236,6 +250,130 @@ class AiTest(Env):
                 call()
             self.assertEqual(caught.exception.status, status, text)
             self.assertIn(text, str(caught.exception))
+
+    def test_gemini_request_shape(self):
+        seen = {}
+
+        def opener(req, timeout):
+            seen["req"], seen["timeout"] = req, timeout
+            return FakeResponse(openai_reply({"name": "Pier", "units": "m", "components": [{"type": "pile", "name": "P", "source": "dimensioned", "params": {}}]}))
+
+        images = [{"label": "Page 1: whole sheet overview", "media_type": "image/jpeg", "data": "QUJD"}]
+        out = ai.compose(self.gemini_cfg(), images, "Ignore sheet 3.", "m", opener)
+        self.assertEqual(seen["req"].full_url, "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions")
+        headers = {k.lower(): v for k, v in seen["req"].header_items()}
+        self.assertEqual(headers["authorization"], "Bearer gem-test")
+        self.assertNotIn("x-api-key", headers)
+        body = json.loads(seen["req"].data.decode("utf-8"))
+        self.assertEqual((body["model"], body["max_tokens"]), ("gemini-2.5-flash", 16000))
+        self.assertEqual(body["tool_choice"], {"type": "function", "function": {"name": ai.TOOL}})
+        self.assertEqual(body["tools"], [{"type": "function", "function": {"name": ai.TOOL, "description": ai.tool_schema()["description"],
+                                                                            "parameters": ai.tool_schema()["input_schema"]}}])
+        messages = body["messages"]
+        self.assertEqual([m["role"] for m in messages], ["system", "user"])
+        self.assertIn(ai.TOOL, messages[0]["content"])
+        content = messages[1]["content"]
+        self.assertEqual([b["type"] for b in content], ["text", "image_url", "text"])
+        self.assertEqual(content[1]["image_url"], {"url": "data:image/jpeg;base64,QUJD"})
+        self.assertIn("Ignore sheet 3.", content[2]["text"])
+        self.assertIn("Work in m.", content[2]["text"])
+        self.assertEqual(seen["timeout"], 280)
+        self.assertEqual((out["scene"]["units"], out["pieces"], out["model"], out["usage"]["total_tokens"]), ("m", 1, "gemini-2.5-flash", 28))
+        # a description alone is enough
+        ai.compose(self.gemini_cfg(), [], "Timber pier 120 ft by 16 ft.", "", opener)
+        text = json.loads(seen["req"].data.decode("utf-8"))["messages"][1]["content"]
+        self.assertEqual(len(text), 1)
+        self.assertIn("Description from the user:", text[0]["text"])
+
+    def test_gemini_tool_call_is_read_and_bad_parts_reported(self):
+        reply = openai_reply({"name": "Pier", "structure_type": "Pier or jetty", "units": "ft", "datum": "MLLW", "components": [
+            {"type": "pile", "name": "Good", "source": "scaled", "params": {"size": 1.5}},
+            {"type": "gantry", "name": "Crane"},
+            {"type": "slab", "name": "Thin", "params": {"thickness": 0}}],
+            "missing": ["Handrail: no sizes"], "general_notes": "Sheet 2 and 4 disagree."})
+        sc, missing, notes, rejected = ai.parse_response(reply)
+        self.assertEqual([c["name"] for c in sc["components"]], ["Good"])
+        self.assertEqual(len(rejected), 2)
+        self.assertIn("Component 2 (Crane)", rejected[0])
+        self.assertEqual((missing, notes, sc["datum"]), (["Handrail: no sizes"], "Sheet 2 and 4 disagree.", "MLLW"))
+
+    def test_gemini_plain_text_json_is_accepted(self):
+        text = 'Sure. {"units": "m", "components": [{"type": "block", "name": "Cap {A}", "params": {}}]} Done.'
+        sc = ai.parse_response(openai_reply(None, finish="stop", content=text))[0]
+        self.assertEqual((sc["units"], sc["components"][0]["name"]), ("m", "Cap {A}"))
+
+    def test_gemini_failures_are_reported(self):
+        from urllib.error import HTTPError, URLError
+        import socket
+
+        def http_error(req, timeout):
+            raise HTTPError(req.full_url, 429, "Too Many", {}, io.BytesIO(b'{"error": {"message": "rate limited"}}'))
+
+        def offline(req, timeout):
+            raise URLError("no route")
+
+        def slow(req, timeout):
+            raise socket.timeout()
+
+        image = {"media_type": "image/png", "data": "QUJD"}
+        cases = [
+            (lambda: ai.compose(self.gemini_cfg(), [image], "", "", http_error), 502, "Gemini API returned an error (429). rate limited"),
+            (lambda: ai.compose(self.gemini_cfg(), [image], "", "", offline), 502, "Could not reach the Gemini API"),
+            (lambda: ai.compose(self.gemini_cfg(), [image], "", "", slow), 504, "Gemini API did not answer"),
+            (lambda: ai.compose(self.gemini_cfg(GEMINI_API_KEY=""), [image], "", ""), 503, "No Gemini API key"),
+            (lambda: ai.compose(self.gemini_cfg(AI_PROVIDER="other"), [image], "", ""), 400, "Unknown AI_PROVIDER"),
+            (lambda: ai.parse_response(openai_reply({"components": []}, finish="length")), 502, "cut off"),
+            (lambda: ai.parse_response(openai_reply(None, finish="stop", content="I cannot read these.")), 502, "I cannot read these."),
+        ]
+        for call, status, text in cases:
+            with self.assertRaises(ai.AiError) as caught:
+                call()
+            self.assertEqual(caught.exception.status, status, text)
+            self.assertIn(text, str(caught.exception))
+
+    def test_gemini_connection_check(self):
+        from urllib.error import HTTPError, URLError
+        seen = {}
+
+        def listing(req, timeout):
+            seen["req"] = req
+            return FakeResponse({"object": "list", "data": [{"id": "gemini-2.5-flash", "object": "model"}, {"id": "gemini-2.5-pro", "object": "model"}]})
+
+        out = ai.check_model(self.gemini_cfg(), listing)
+        self.assertEqual((out["ok"], out["model"], out["warnings"]), (True, "gemini-2.5-flash", []))
+        self.assertEqual((seen["req"].get_method(), seen["req"].full_url),
+                         ("GET", "https://generativelanguage.googleapis.com/v1beta/openai/models"))
+        self.assertEqual({k.lower(): v for k, v in seen["req"].header_items()}["authorization"], "Bearer gem-test")
+
+        def unlisted(req, timeout):
+            return FakeResponse({"object": "list", "data": [{"id": "gemini-2.5-pro", "object": "model"}]})
+
+        self.assertEqual(len(ai.check_model(self.gemini_cfg(), unlisted)["warnings"]), 1)
+
+        def refuse(code):
+            def opener(req, timeout):
+                raise HTTPError(req.full_url, code, "x", {}, io.BytesIO(b'{"error": {"message": "detail here"}}'))
+            return opener
+
+        def offline(req, timeout):
+            raise URLError("certificate verify failed")
+
+        for opener, text in ((refuse(401), "key was not accepted"), (refuse(403), "key was not accepted"),
+                             (refuse(500), "returned an error (500). detail here"),
+                             (offline, "Could not reach the Gemini API from this server: certificate verify failed")):
+            with self.assertRaises(ai.AiError) as caught:
+                ai.check_model(self.gemini_cfg(), opener)
+            self.assertIn(text, str(caught.exception))
+        with self.assertRaises(ai.AiError) as caught:
+            ai.check_model(self.gemini_cfg(GEMINI_API_KEY=""))
+        self.assertEqual(caught.exception.status, 503)
+
+    def test_describe_reports_the_active_provider(self):
+        self.assertEqual(ai.describe(self.cfg()), ("anthropic", "claude-opus-5-5", True))
+        self.assertEqual(ai.describe(self.cfg(ANTHROPIC_API_KEY="")), ("anthropic", "claude-opus-5-5", False))
+        self.assertEqual(ai.describe(self.gemini_cfg()), ("gemini", "gemini-2.5-flash", True))
+        self.assertEqual(ai.describe(self.gemini_cfg(GEMINI_API_KEY="")), ("gemini", "gemini-2.5-flash", False))
+        self.assertEqual(ai.describe({"AI_PROVIDER": "other"}), ("anthropic", "", False))
 
 
 def request(method, path, body=None, cookie=None, addr="127.0.0.1", raw=None):
