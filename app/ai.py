@@ -1,8 +1,10 @@
-"""Ask Claude to compose a structure from drawing images, a written description, or both.
+"""Ask an AI model to compose a structure from drawing images, a written description, or both.
 
-The model is given the component vocabulary and asked to call one tool, record_structure. Each
-component it returns is validated on its own, so one bad component does not lose the rest.
-Uses only urllib, so nothing needs installing on the host.
+Two providers are supported. Anthropic (Claude) is the default and is talked to in its own Messages API form.
+Gemini is reached through Google's OpenAI-compatible endpoint, in chat completions form; the same form serves any
+other OpenAI-compatible provider by changing the URL, key and model. The model is given the component vocabulary
+and asked to call one tool, record_structure. Each component it returns is validated on its own, so one bad
+component does not lose the rest. Uses only urllib, so nothing needs installing on the host.
 """
 import json
 import re
@@ -17,6 +19,34 @@ from . import scene as scene_mod
 TOOL = "record_structure"
 MEDIA = ("image/jpeg", "image/png")
 AI_SOURCES = ("dimensioned", "derived", "scaled", "assumed")
+PROVIDERS = ("anthropic", "gemini")
+
+
+def _provider(cfg):
+    provider = str(cfg.get("AI_PROVIDER") or "anthropic").lower()
+    if provider not in PROVIDERS:
+        raise AiError("Unknown AI_PROVIDER %r. Use one of: %s." % (provider, ", ".join(PROVIDERS)), 400)
+    return provider
+
+
+def _api_key(cfg, provider):
+    key = cfg.get("ANTHROPIC_API_KEY") if provider == "anthropic" else cfg.get("GEMINI_API_KEY")
+    if not key:
+        raise AiError("No %s API key is configured on the server." % ("Anthropic" if provider == "anthropic" else "Gemini"), 503)
+    return key
+
+
+def _model(cfg):
+    provider = _provider(cfg)
+    return cfg["GEMINI_MODEL"] if provider == "gemini" else cfg["ANTHROPIC_MODEL"]
+
+
+def describe(cfg):
+    """(provider, model, key_present) for the health page and the set-up script. Never raises."""
+    provider = str(cfg.get("AI_PROVIDER") or "anthropic").lower()
+    if provider == "gemini":
+        return provider, cfg.get("GEMINI_MODEL") or "", bool(cfg.get("GEMINI_API_KEY"))
+    return "anthropic", cfg.get("ANTHROPIC_MODEL") or "", bool(cfg.get("ANTHROPIC_API_KEY"))
 
 
 class AiError(Exception):
@@ -129,7 +159,7 @@ def tool_schema():
                 "required": ["name", "units", "components"]}}
 
 
-def build_payload(cfg, images, notes, units=""):
+def _anthropic_payload(cfg, images, notes, units=""):
     content = []
     for img in images:
         content.append({"type": "text", "text": str(img.get("label") or "Drawing image")[:200]})
@@ -142,6 +172,37 @@ def build_payload(cfg, images, notes, units=""):
     content.append({"type": "text", "text": ask})
     return {"model": cfg["ANTHROPIC_MODEL"], "max_tokens": cfg["MAX_OUTPUT_TOKENS"], "system": system_prompt(),
             "tools": [tool_schema()], "tool_choice": {"type": "auto"}, "messages": [{"role": "user", "content": content}]}
+
+
+def _openai_payload(cfg, images, notes, units=""):
+    """Same request in OpenAI chat completions form, for Gemini's OpenAI-compatible endpoint.
+
+    The tool schema is already JSON Schema, so it is reused as the function parameters. The system prompt is sent
+    as a system message, and each image as a data URL. The tool call is forced, so the reply should carry the
+    structure as function arguments; when a model answers in prose instead, the JSON in its text is read back.
+    """
+    content = []
+    for img in images:
+        content.append({"type": "text", "text": str(img.get("label") or "Drawing image")[:200]})
+        content.append({"type": "image_url", "image_url": {"url": "data:%s;base64,%s" % (img["media_type"], img["data"])}})
+    ask = "Build the structure model from %s and call %s." % ("these drawings" if images else "this description", TOOL)
+    if units in scene_mod.UNITS:
+        ask += " Work in %s." % units
+    if notes:
+        ask += "\n\n%s\n%s" % ("Notes from the user:" if images else "Description from the user:", str(notes)[:6000])
+    content.append({"type": "text", "text": ask})
+    schema = tool_schema()
+    function = {"name": schema["name"], "description": schema["description"], "parameters": schema["input_schema"]}
+    return {"model": cfg["GEMINI_MODEL"], "max_tokens": cfg["MAX_OUTPUT_TOKENS"],
+            "messages": [{"role": "system", "content": system_prompt()}, {"role": "user", "content": content}],
+            "tools": [{"type": "function", "function": function}],
+            "tool_choice": {"type": "function", "function": {"name": TOOL}}}
+
+
+def build_payload(cfg, images, notes, units=""):
+    if _provider(cfg) == "gemini":
+        return _openai_payload(cfg, images, notes, units)
+    return _anthropic_payload(cfg, images, notes, units)
 
 
 def check_input(cfg, images, notes):
@@ -160,11 +221,16 @@ def check_input(cfg, images, notes):
 
 
 def call_api(cfg, payload, opener=urlopen):
-    if not cfg.get("ANTHROPIC_API_KEY"):
-        raise AiError("No Anthropic API key is configured on the server.", 503)
-    req = Request(cfg["ANTHROPIC_URL"], data=json.dumps(payload).encode("utf-8"), method="POST",
-                  headers={"content-type": "application/json", "x-api-key": cfg["ANTHROPIC_API_KEY"],
-                           "anthropic-version": cfg["ANTHROPIC_VERSION"]})
+    provider = _provider(cfg)
+    key = _api_key(cfg, provider)
+    name = "Gemini" if provider == "gemini" else "Claude"
+    if provider == "gemini":
+        url = cfg["GEMINI_URL"]
+        headers = {"content-type": "application/json", "authorization": "Bearer " + key}
+    else:
+        url = cfg["ANTHROPIC_URL"]
+        headers = {"content-type": "application/json", "x-api-key": key, "anthropic-version": cfg["ANTHROPIC_VERSION"]}
+    req = Request(url, data=json.dumps(payload).encode("utf-8"), method="POST", headers=headers)
     try:
         resp = opener(req, timeout=cfg["REQUEST_TIMEOUT"])
         return json.loads(resp.read().decode("utf-8"))
@@ -174,18 +240,56 @@ def call_api(cfg, payload, opener=urlopen):
             detail = json.loads(err.read().decode("utf-8")).get("error", {}).get("message", "")
         except Exception:
             pass
-        raise AiError("The Claude API returned an error (%d). %s" % (err.code, detail), 502)
+        raise AiError("The %s API returned an error (%d). %s" % (name, err.code, detail), 502)
     except socket.timeout:
-        raise AiError("The Claude API did not answer within %d seconds. Try fewer pages or a lower detail level."
-                      % cfg["REQUEST_TIMEOUT"], 504)
+        raise AiError("The %s API did not answer within %d seconds. Try fewer pages or a lower detail level."
+                      % (name, cfg["REQUEST_TIMEOUT"]), 504)
     except URLError as err:
         if isinstance(getattr(err, "reason", None), socket.timeout):
-            raise AiError("The Claude API timed out. Try fewer pages or a lower detail level.", 504)
-        raise AiError("Could not reach the Claude API from this server: %s" % err.reason, 502)
+            raise AiError("The %s API timed out. Try fewer pages or a lower detail level." % name, 504)
+        raise AiError("Could not reach the %s API from this server: %s" % (name, err.reason), 502)
+
+
+def _check_openai_model(cfg, opener=urlopen):
+    """List the models the OpenAI-compatible endpoint offers and check ours is among them.
+
+    The list reply does not say whether a model takes images, so that check is skipped here; a model that cannot
+    read drawings fails the first real run, and the error names it.
+    """
+    key = _api_key(cfg, "gemini")
+    base = cfg["GEMINI_URL"]
+    if base.endswith("/chat/completions"):
+        base = base[:-len("/chat/completions")]
+    req = Request(base.rstrip("/") + "/models", method="GET", headers={"authorization": "Bearer " + key})
+    try:
+        info = json.loads(opener(req, timeout=30).read().decode("utf-8"))
+    except HTTPError as err:
+        detail = ""
+        try:
+            detail = json.loads(err.read().decode("utf-8")).get("error", {}).get("message", "")
+        except Exception:
+            pass
+        if err.code in (401, 403):
+            raise AiError("The Gemini API key was not accepted (%d). %s" % (err.code, detail), 502)
+        raise AiError("The Gemini API returned an error (%d). %s" % (err.code, detail), 502)
+    except socket.timeout:
+        raise AiError("The Gemini API did not answer within 30 seconds.", 504)
+    except URLError as err:
+        raise AiError("Could not reach the Gemini API from this server: %s" % err.reason, 502)
+    except ValueError:
+        raise AiError("The Gemini API sent a reply that could not be read.", 502)
+    ids = [m.get("id") for m in (info.get("data") or []) if isinstance(m, dict)]
+    out = {"ok": True, "model": cfg["GEMINI_MODEL"], "display_name": "", "lifecycle": "", "images": None,
+           "max_output_tokens": None, "warnings": []}
+    if cfg["GEMINI_MODEL"] not in ids:
+        out["warnings"].append("This model was not listed by the API; check GEMINI_MODEL.")
+    return out
 
 
 def check_model(cfg, opener=urlopen):
     """Ask the API about the configured model. Costs nothing, and proves the key, the model name and the network path."""
+    if _provider(cfg) == "gemini":
+        return _check_openai_model(cfg, opener)
     if not cfg.get("ANTHROPIC_API_KEY"):
         raise AiError("No Anthropic API key is configured on the server.", 503)
     url = cfg["ANTHROPIC_URL"].rsplit("/", 1)[0] + "/models/" + quote(str(cfg["ANTHROPIC_MODEL"]), safe="")
@@ -250,19 +354,7 @@ def _json_from_text(text):
     return None
 
 
-def parse_response(response):
-    """Return (scene, missing, general_notes, rejected) from a Messages API response."""
-    if response.get("stop_reason") == "max_tokens":
-        raise AiError("The reply was cut off before it finished. Raise MAX_OUTPUT_TOKENS, or read fewer pages at a time.", 502)
-    data, texts = None, []
-    for block in response.get("content") or []:
-        if block.get("type") == "tool_use" and block.get("name") == TOOL and isinstance(block.get("input"), dict):
-            data = block["input"]
-            break
-        if block.get("type") == "text":
-            texts.append(block.get("text") or "")
-    if data is None:
-        data = _json_from_text("\n".join(texts))
+def _scene_from_data(data, texts):
     if not isinstance(data, dict) or not isinstance(data.get("components"), list):
         raise AiError("The model did not return a structure. Its reply began: %s" % ("\n".join(texts)[:200] or "(empty)"), 502)
     head = {k: data.get(k) for k in ("name", "structure_type", "units", "datum", "description")}
@@ -286,11 +378,52 @@ def parse_response(response):
     return base, missing, str(data.get("general_notes") or "")[:3000], rejected
 
 
+def _parse_openai_response(response):
+    """Read the tool call (or plain JSON in the text) out of a chat completions reply."""
+    choice = (response.get("choices") or [{}])[0]
+    if choice.get("finish_reason") == "length":
+        raise AiError("The reply was cut off before it finished. Raise MAX_OUTPUT_TOKENS, or read fewer pages at a time.", 502)
+    message = choice.get("message") or {}
+    data, texts = None, []
+    for call in message.get("tool_calls") or []:
+        fn = call.get("function") or {}
+        if fn.get("name") != TOOL:
+            continue
+        try:
+            data = json.loads(fn.get("arguments") or "")
+        except ValueError:
+            data = None
+        break
+    if isinstance(message.get("content"), str) and message["content"]:
+        texts.append(message["content"])
+    if data is None:
+        data = _json_from_text("\n".join(texts))
+    return _scene_from_data(data, texts)
+
+
+def parse_response(response):
+    """Return (scene, missing, general_notes, rejected) from a Messages API or chat completions response."""
+    if "choices" in response:
+        return _parse_openai_response(response)
+    if response.get("stop_reason") == "max_tokens":
+        raise AiError("The reply was cut off before it finished. Raise MAX_OUTPUT_TOKENS, or read fewer pages at a time.", 502)
+    data, texts = None, []
+    for block in response.get("content") or []:
+        if block.get("type") == "tool_use" and block.get("name") == TOOL and isinstance(block.get("input"), dict):
+            data = block["input"]
+            break
+        if block.get("type") == "text":
+            texts.append(block.get("text") or "")
+    if data is None:
+        data = _json_from_text("\n".join(texts))
+    return _scene_from_data(data, texts)
+
+
 def compose(cfg, images, notes="", units="", opener=urlopen):
     images = images or []
     check_input(cfg, images, notes)
     response = call_api(cfg, build_payload(cfg, images, notes, units), opener)
     sc, missing, general, rejected = parse_response(response)
     return {"scene": sc, "missing": missing, "general_notes": general, "rejected": rejected,
-            "model": response.get("model") or cfg["ANTHROPIC_MODEL"], "usage": response.get("usage") or {},
+            "model": response.get("model") or _model(cfg), "usage": response.get("usage") or {},
             "pieces": scene_mod.count_parts(sc)}

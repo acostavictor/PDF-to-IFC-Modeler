@@ -203,10 +203,14 @@ def check_config(rep):
         rep.add(OK, "App password", "set")
     else:
         rep.add(WARN, "App password", "not set", "Fine on your own computer. On a public server the database and AI stay off until it is set.")
-    if cfg["ANTHROPIC_API_KEY"]:
-        rep.add(OK, "Anthropic API key", "set (ends in ...%s)" % cfg["ANTHROPIC_API_KEY"][-4:])
+    from app import ai
+    _provider, _, _ = ai.describe(cfg)
+    _label = "Gemini API key" if _provider == "gemini" else "Anthropic API key"
+    _key = cfg["GEMINI_API_KEY"] if _provider == "gemini" else cfg["ANTHROPIC_API_KEY"]
+    if _key:
+        rep.add(OK, _label, "set (ends in ...%s)" % _key[-4:])
     else:
-        rep.add(WARN, "Anthropic API key", "not set", "The app works, but Build model with AI stays off.")
+        rep.add(WARN, _label, "not set", "The app works, but Build model with AI stays off.")
     return cfg
 
 
@@ -245,15 +249,17 @@ def check_web_entry(rep):
 
 def check_api(rep, cfg, opener=None):
     from app import ai
-    if not cfg["ANTHROPIC_API_KEY"]:
+    provider, _, key_present = ai.describe(cfg)
+    name = "Gemini" if provider == "gemini" else "Claude"
+    if not key_present:
         return False
     try:
         info = ai.check_model(cfg, opener) if opener else ai.check_model(cfg)
     except ai.AiError as err:
-        rep.add(FAIL, "Claude API connection", str(err), "Check the key at console.anthropic.com. If the API cannot be reached at all, ask the host whether "
-                "outbound HTTPS to api.anthropic.com is allowed.")
+        rep.add(FAIL, "%s API connection" % name, str(err), "Check the key. If the API cannot be reached at all, ask the host whether "
+                "outbound HTTPS is allowed.")
         return False
-    rep.add(OK, "Claude API connection", "%s answered; the key is accepted" % (info["display_name"] or info["model"]))
+    rep.add(OK, "%s API connection" % name, "%s answered; the key is accepted" % (info["display_name"] or info["model"]))
     for text in info["warnings"]:
         rep.add(WARN, "Model", text)
     return True
@@ -282,7 +288,7 @@ def ai_test(rep, cfg, opener=None, out=sys.stdout):
 def main(argv=None, ask=input, ask_secret=getpass.getpass, out=sys.stdout, opener=None):
     parser = argparse.ArgumentParser(description="Set up and check a server for PDF to IFC Modeler.")
     parser.add_argument("--check", action="store_true", help="check only; change nothing")
-    parser.add_argument("--ai-test", action="store_true", help="send one small real request to Claude (billed to your key, usually a few cents)")
+    parser.add_argument("--ai-test", action="store_true", help="send one small real request to the AI model (billed on Claude, free on the Gemini free tier)")
     parser.add_argument("--yes", action="store_true", help="do not ask before the billed test")
     args = parser.parse_args(argv)
     rep = Report(out)
@@ -311,9 +317,11 @@ def main(argv=None, ask=input, ask_secret=getpass.getpass, out=sys.stdout, opene
         check_web_entry(rep)
         reachable = check_api(rep, cfg, opener)
         if args.ai_test and reachable:
-            go = args.yes or ask("\nSend one small test request to Claude? It is billed to your key, usually a few cents. [y/N] ").strip().lower() in ("y", "yes")
+            from app import ai as _ai
+            _name = "Gemini" if _ai.describe(cfg)[0] == "gemini" else "Claude"
+            go = args.yes or ask("\nSend one small test request to %s? It is billed to your key on Claude, and free on the Gemini free tier. [y/N] " % _name).strip().lower() in ("y", "yes")
             if go:
-                print("Asking Claude to build a small pier from a description. This can take a minute.", file=out)
+                print("Asking %s to build a small pier from a description. This can take a minute." % _name, file=out)
                 ai_test(rep, cfg, opener, out)
         elif args.ai_test:
             rep.add(WARN, "AI test run", "skipped because the connection check did not pass")
@@ -324,7 +332,7 @@ def main(argv=None, ask=input, ask_secret=getpass.getpass, out=sys.stdout, opene
         print("%d problem(s) to fix: %s" % (len(failed), "; ".join(r[1] for r in failed)), file=out)
         return 1
     print("Ready. Open the app's address in a browser%s." % (" and sign in" if cfg and cfg["APP_PASSWORD"] else ""), file=out)
-    if cfg and cfg["ANTHROPIC_API_KEY"] and not args.ai_test:
+    if cfg and (cfg["ANTHROPIC_API_KEY"] or cfg["GEMINI_API_KEY"]) and not args.ai_test:
         print("To prove a full AI run end to end, run:  python3 tools/setup_server.py --check --ai-test", file=out)
     return 0
 

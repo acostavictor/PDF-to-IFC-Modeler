@@ -156,13 +156,14 @@ def handle(environ, cfg):
             counts = _store(cfg).counts() if trusted else {}
         except Exception as err:                       # a broken database must not take the whole app down
             db_error = "%s: %s" % (type(err).__name__, err)
-        ai_ready = bool(cfg["ANTHROPIC_API_KEY"]) and trusted
+        provider, model, key_present = ai.describe(cfg)
+        ai_ready = key_present and trusted
         return _json(200, {
             "ok": True, "version": VERSION, "python": sys.version.split()[0], "login_required": need_login, "logged_in": logged_in,
             "storage": "server" if trusted and not db_error else "browser", "db_error": db_error, "db_counts": counts,
             "storage_reason": "" if trusted else "Set APP_PASSWORD on the server to use the shared database.",
-            "ai_ready": ai_ready, "model": cfg["ANTHROPIC_MODEL"],
-            "ai_reason": "" if ai_ready else ("No Anthropic API key is configured on the server." if trusted
+            "ai_ready": ai_ready, "model": model, "ai_provider": provider,
+            "ai_reason": "" if ai_ready else (("No %s API key is configured on the server." % ("Gemini" if provider == "gemini" else "Anthropic")) if trusted
                                               else "Set APP_PASSWORD on the server to enable AI."),
             "max_images": cfg["MAX_IMAGES"], "max_body_mb": cfg["MAX_BODY_MB"], "config_file_found": bool(cfg["_file"])})
     if path == "/api/login":
@@ -206,8 +207,9 @@ def handle(environ, cfg):
             if not trusted:
                 raise HttpError(403, "AI is off until APP_PASSWORD is set on the server.")
             try:                                      # what can be refused at once is refused with a proper status
-                if not cfg["ANTHROPIC_API_KEY"]:
-                    raise ai.AiError("No Anthropic API key is configured on the server.", 503)
+                provider, _, key_present = ai.describe(cfg)
+                if not key_present:
+                    raise ai.AiError("No %s API key is configured on the server." % ("Gemini" if provider == "gemini" else "Anthropic"), 503)
                 ai.check_input(cfg, data.get("images") or [], data.get("notes") or "")
             except ai.AiError as err:
                 raise HttpError(err.status, str(err))
