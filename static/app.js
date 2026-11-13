@@ -17,7 +17,13 @@ const TILE_PX = 2000;        // long edge of a close-up, within the API limit fo
 const OVERVIEW_PX = 1568;
 const OVERLAP = 0.08;
 
-const state = { api: "api/", health: null, templates: [], template: null, pdf: null, page: 1, zoom: 1, rendering: null };
+const state = { api: "api/", health: null, templates: [], template: null, pdf: null, page: 1, zoom: 1, rendering: null, py: null };
+
+// Browser preview: when no server answers (for example on GitHub Pages), the Python model builder runs in the page.
+const PYODIDE = "https://cdn.jsdelivr.net/npm/pyodide@314.0.7/";
+const PREVIEW_FILES = ["app/__init__.py", "app/browser.py", "app/build.py", "app/ifc/__init__.py", "app/ifc/kit.py",
+  "app/ifc/writer.py", "app/templates/__init__.py", "app/templates/base.py", "app/templates/caisson_gate.py",
+  "app/templates/dry_dock.py", "app/templates/strut_gate.py", "app/templates/strut_gate_staad.py"];
 
 // ---------------------------------------------------------------- server calls
 async function call(path, options) {
@@ -46,15 +52,48 @@ function banner(text, isError) {
 }
 
 // ---------------------------------------------------------------- start-up and sign-in
+function modeNote(text) { const m = $("mode"); m.hidden = !text; m.textContent = text || ""; }
+async function startPreview() {
+  modeNote("No server is answering, so preview mode is starting: loading the model builder into your browser (about 13 MB the first time).");
+  const root = new URL("../", import.meta.url).href;
+  const sources = await Promise.all(PREVIEW_FILES.map(async (f) => {
+    const r = await fetch(root + f);
+    if (!r.ok) throw new Error("could not load " + f);
+    return [f, await r.text()];
+  }));
+  const { loadPyodide } = await import(PYODIDE + "pyodide.mjs");
+  const py = await loadPyodide({ indexURL: PYODIDE });
+  for (const [f, text] of sources) {
+    const path = "/p2i/" + f;
+    py.FS.mkdirTree(path.slice(0, path.lastIndexOf("/")));
+    py.FS.writeFile(path, text);
+  }
+  py.runPython("import sys\nsys.path.insert(0, '/p2i')\nimport app.browser as p2i_browser");
+  state.py = py.globals.get("p2i_browser");
+}
 async function start() {
   state.health = await findApi();
-  if (!state.health) { banner("The server part of the app is not answering. Check that index.cgi can run (see docs/DEPLOY_HOSTGATOR.md).", true); return; }
+  if (!state.health) {
+    try { await startPreview(); }
+    catch (e) {
+      modeNote("");
+      banner("The server part of the app is not answering, and preview mode could not start (" + e.message +
+        "). On your own host, check that index.cgi can run (see docs/DEPLOY_HOSTGATOR.md).", true);
+      return;
+    }
+    state.templates = JSON.parse(state.py.templates_json()).templates;
+    state.health = { ai_ready: false, ai_reason: "Reading with AI is not available in preview mode.", max_images: 60, max_body_mb: 60, login_required: false };
+    modeNote("Preview mode: no server is answering, so models are built here in your browser. You can open a PDF, type in values " +
+      "and download files. Reading drawings with AI needs the server version.");
+  } else {
+    const h = state.health;
+    if (h.login_required && !h.logged_in) { $("login").hidden = false; $("app").hidden = true; return; }
+    const res = await call("templates");
+    if (!res.ok) { banner(await errorText(res), true); return; }
+    state.templates = (await res.json()).templates;
+  }
   const h = state.health;
-  if (h.login_required && !h.logged_in) { $("login").hidden = false; $("app").hidden = true; return; }
   $("login").hidden = true; $("logout").hidden = !h.login_required;
-  const res = await call("templates");
-  if (!res.ok) { banner(await errorText(res), true); return; }
-  state.templates = (await res.json()).templates;
   $("app").hidden = false;
   $("ai-state").textContent = h.ai_ready ? "Model: " + h.model : h.ai_reason;
   $("read").disabled = !h.ai_ready;
@@ -290,7 +329,15 @@ function download(blob, name) {
 }
 async function build(format) {
   const msg = $("build-msg"); msg.className = ""; msg.textContent = "Building…";
-  const res = await postJson("generate", { template: state.template.id, format, params: collect(), meta: meta() });
+  const req = { template: state.template.id, format, params: collect(), meta: meta() };
+  if (state.py) {
+    const out = JSON.parse(state.py.generate_json(JSON.stringify(req)));
+    if (out.error) { msg.className = "error"; msg.textContent = out.error; return; }
+    download(new Blob([out.text], { type: out.content_type }), out.filename);
+    msg.className = "ok"; msg.textContent = "Downloaded " + out.filename + ".";
+    return;
+  }
+  const res = await postJson("generate", req);
   if (!res.ok) { msg.className = "error"; msg.textContent = await errorText(res); return; }
   const name = (/filename="([^"]+)"/.exec(res.headers.get("content-disposition") || "") || [])[1] || (state.template.id + "." + format);
   download(await res.blob(), name);

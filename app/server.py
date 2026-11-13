@@ -7,9 +7,8 @@ import sys
 import time
 import traceback
 
-from . import auth, config, extract
-from .templates import TEMPLATES, EXTRA_EXPORTS, catalogue
-from .templates.base import ParamError
+from . import auth, build, config, extract
+from .templates import TEMPLATES, catalogue
 
 ROOT = config.ROOT
 STATIC = os.path.join(ROOT, "static")
@@ -73,21 +72,11 @@ def _read_json(environ, cfg):
     return data
 
 
-def _slug(text, fallback):
-    s = re.sub(r"[^A-Za-z0-9]+", "_", str(text or "")).strip("_")[:60]
-    return s or fallback
-
-
 def _template(data):
     t = TEMPLATES.get(str(data.get("template") or ""))
     if t is None:
         raise HttpError(400, "Unknown structure type.")
     return t
-
-
-def _meta(data):
-    meta = data.get("meta") if isinstance(data.get("meta"), dict) else {}
-    return {k: str(meta.get(k) or "")[:200] for k in ("project_name", "facility", "site", "author", "source")}
 
 
 def handle(environ, cfg):
@@ -147,30 +136,11 @@ def handle(environ, cfg):
         except extract.ExtractError as err:
             raise HttpError(err.status, str(err))
     if path == "/api/generate":
-        t = _template(data)
-        fmt = str(data.get("format") or "ifc")
-        meta = _meta(data)
-        base = _slug(meta["project_name"], t.ID)
-        params = data.get("params") if isinstance(data.get("params"), dict) else {}
         try:
-            if fmt == "ifc":
-                meta["filename"] = base + ".ifc"
-                return _download(t.build(params, meta), base + ".ifc", "application/x-step")
-            exports = EXTRA_EXPORTS.get(t.ID, {})
-            if fmt in exports:
-                meta["date"] = time.strftime("%d-%b-%y")
-                text, _stats = exports[fmt][1](params, meta)
-                return _download(text, "%s.%s" % (base, fmt), "text/plain; charset=utf-8")
-        except ParamError as err:
-            hint = ""
-            examples = [spec["key"] for spec in t.PARAMS if params.get(spec["key"]) in (None, "") or (
-                isinstance(params[spec["key"]], dict) and params[spec["key"]].get("source") == "example default")]
-            if err.fit and examples:
-                hint = " Some inputs are still example values; they may not fit the dimensions you changed."
-            raise HttpError(400, str(err) + "." + hint)
-        except (ValueError, ZeroDivisionError, IndexError, KeyError) as err:
-            raise HttpError(400, "These values do not make a buildable model (%s). Check the highlighted inputs." % err)
-        raise HttpError(400, "Unknown output format.")
+            text, filename, ctype = build.generate(data.get("template"), data.get("format"), data.get("params"), data.get("meta"))
+        except build.BuildError as err:
+            raise HttpError(400, str(err))
+        return _download(text, filename, ctype)
     raise HttpError(404, "Not found.")
 
 

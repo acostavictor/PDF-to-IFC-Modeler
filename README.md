@@ -13,6 +13,23 @@ dimension on the way.
 The app does not turn an arbitrary drawing into a model on its own. It fills in a template, and a person
 approves the numbers.
 
+## Preview site
+
+https://acostavictor.github.io/PDF-to-IFC-Modeler/ is this repository served by GitHub Pages from the
+`gh-pages` branch. GitHub Pages cannot run the Python server, so the page switches to **preview mode**: the
+same Python model builder is loaded into the browser with Pyodide, and models are built on your own machine.
+
+| | Preview site | Server version (HostGator) |
+|---|---|---|
+| Open a PDF and view it beside the form | Yes | Yes |
+| Type in values, download IFC and STAAD files | Yes | Yes |
+| Read drawings with AI | No | Yes |
+| Password | None; nothing to protect | Required for AI reading |
+
+AI reading is left out of preview mode because an API key cannot be kept secret in a public web page. In
+preview mode nothing is uploaded anywhere. The first visit downloads about 13 MB (Pyodide, from the jsDelivr
+CDN). A workflow keeps `gh-pages` identical to `main` after every push to `main`.
+
 ## Structure types
 
 | Type | What it builds | Units | Extra output |
@@ -36,6 +53,8 @@ caisson, Dry Dock No. 5).
 - The IFC files of all three types pass IfcOpenShell schema validation, and every element produces geometry.
 - The browser flow (sign in, open a PDF, cut pages into images, fill the form, download) was tested in
   Chromium against a stand-in for the Claude API.
+- Preview mode was tested the same way, with the repository served as static files and the Pyodide CDN
+  files supplied locally.
 - **Not yet tested:** a real call to the Claude API, running on HostGator, and opening the STAAD file in
   STAAD.Pro. How well the AI reads a given drawing set is unknown until you try it; the review step exists
   for that reason.
@@ -91,6 +110,7 @@ index.cgi                  CGI entry point (shared hosting)
 passenger_wsgi.py          entry point for hosts that use Passenger
 app/server.py              routes: health, login, templates, extract, generate
 app/extract.py             the Claude API request and response handling
+app/build.py, browser.py   model building shared by the server and the browser preview
 app/ifc/                   dependency-free IFC2x3 writer and modelling helpers
 app/templates/             one module per structure type, plus the STAAD exporter
 tests/                     unit tests (python3 -m unittest discover -s tests)

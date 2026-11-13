@@ -113,6 +113,33 @@ class TemplateTest(unittest.TestCase):
         self.assertIn("std", cat[0]["exports"])
 
 
+class BrowserPreviewTest(unittest.TestCase):
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+    def test_preview_file_list_matches_the_package(self):
+        import re
+        js = open(os.path.join(self.root, "static", "app.js")).read()
+        listed = set(re.findall(r'"(app/[^"]+\.py)"', js[js.index("PREVIEW_FILES"):js.index("];", js.index("PREVIEW_FILES"))]))
+        server_only = {"app/server.py", "app/extract.py", "app/auth.py", "app/config.py"}
+        on_disk = set()
+        for folder, _dirs, files in os.walk(os.path.join(self.root, "app")):
+            for name in files:
+                if name.endswith(".py"):
+                    on_disk.add(os.path.relpath(os.path.join(folder, name), self.root).replace(os.sep, "/"))
+        self.assertEqual(listed, on_disk - server_only)
+        self.assertTrue(os.path.isfile(os.path.join(self.root, ".nojekyll")))
+
+    def test_browser_entry_points(self):
+        import json
+        from app import browser
+        self.assertEqual(len(json.loads(browser.templates_json())["templates"]), 3)
+        out = json.loads(browser.generate_json(json.dumps({"template": "dry_dock", "format": "ifc", "params": {}, "meta": {"project_name": "Dock"}})))
+        self.assertEqual(out["filename"], "Dock.ifc")
+        self.assertTrue(out["text"].startswith("ISO-10303-21;"))
+        bad = json.loads(browser.generate_json(json.dumps({"template": "dry_dock", "params": {"floor_el": 99}})))
+        self.assertIn("elevations", bad["error"])
+
+
 @unittest.skipUnless(os.environ.get("VALIDATE_IFC"), "set VALIDATE_IFC=1 with IfcOpenShell installed")
 class SchemaTest(unittest.TestCase):
     def test_generated_files_pass_schema_validation(self):
