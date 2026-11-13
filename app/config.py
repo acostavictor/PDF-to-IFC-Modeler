@@ -17,7 +17,8 @@ DEFAULTS = {
     "MAX_IMAGES": 60,
     "MAX_BODY_MB": 60,
     "REQUEST_TIMEOUT": 280,
-    "MAX_OUTPUT_TOKENS": 8000,
+    "MAX_OUTPUT_TOKENS": 16000,
+    "DB_PATH": "",
 }
 
 

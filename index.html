@@ -5,14 +5,28 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PDF to IFC Modeler</title>
 <link rel="stylesheet" href="static/style.css">
+<script type="importmap">{"imports": {"three": "./static/vendor/three/three.module.js"}}</script>
 </head>
 <body>
 <header class="top">
-  <div>
+  <div class="brand">
     <h1>PDF to IFC Modeler</h1>
-    <p>Read engineering drawings, review the dimensions, download a 3D model.</p>
+    <p>Marine and waterfront structures, from drawings to a checked 3D model.</p>
   </div>
-  <button id="logout" class="ghost" hidden>Sign out</button>
+  <div class="toolbar" id="toolbar" hidden>
+    <button id="btn-new" class="ghost">New</button>
+    <button id="btn-open" class="ghost">Open</button>
+    <button id="btn-save" class="ghost">Save</button>
+    <button id="btn-copy" class="ghost">Save as copy</button>
+    <button id="btn-library" class="ghost">Library</button>
+    <label class="sr" for="ifc-schema">IFC version</label>
+    <select id="ifc-schema">
+      <option value="IFC2X3">IFC 2x3 (widest support)</option>
+      <option value="IFC4X3">IFC 4.3 (marine classes)</option>
+    </select>
+    <button id="btn-export" class="accent">Download IFC</button>
+    <button id="logout" class="ghost" hidden>Sign out</button>
+  </div>
 </header>
 
 <main>
@@ -28,84 +42,128 @@
     </form>
   </section>
 
-  <div id="app" hidden>
-    <section class="card">
-      <h2><span class="step">1</span> Choose the structure type</h2>
-      <div id="templates" class="choices"></div>
-    </section>
-
-    <section class="card">
-      <h2><span class="step">2</span> Add the drawings</h2>
-      <p class="muted">The PDF stays in your browser. Only the page images you choose to read are sent to the server, and from there to the AI model.</p>
-      <div class="inline">
-        <input id="pdf" type="file" accept="application/pdf">
-        <span id="pdf-info" class="muted"></span>
-      </div>
-      <div id="read-options" hidden>
-        <fieldset>
-          <legend>Pages to read</legend>
-          <div id="pages" class="pages"></div>
-        </fieldset>
-        <div class="inline">
-          <label for="detail">Detail per page</label>
-          <select id="detail">
-            <option value="1x1">Overview only (fastest, small text may be unreadable)</option>
-            <option value="2x2">Overview + 4 close-ups</option>
-            <option value="3x2" selected>Overview + 6 close-ups (recommended for large sheets)</option>
-            <option value="4x3">Overview + 12 close-ups</option>
-          </select>
-          <span id="image-count" class="muted"></span>
+  <div id="app" class="workspace" hidden>
+    <section class="views">
+      <div class="pane">
+        <div class="pane-bar">
+          <strong>3D preview</strong>
+          <span id="tally" class="muted"></span>
+          <span class="spacer"></span>
+          <label for="colour">Colour by</label>
+          <select id="colour"><option value="material">Material</option><option value="source">Source</option></select>
+          <button id="fit" class="ghost small">Fit</button>
         </div>
-        <label for="notes">Notes for the reader (optional)</label>
-        <textarea id="notes" rows="2" placeholder="For example: sheet 4 is superseded by the clouded revision on sheet 2."></textarea>
-        <div class="inline">
-          <button id="read">Read drawings with AI</button>
-          <span id="ai-state" class="muted"></span>
-        </div>
-        <div id="progress" class="muted" role="status"></div>
-      </div>
-      <p class="muted">No drawings to hand, or prefer to type? Skip to step 3 and fill in the values yourself.</p>
-    </section>
-
-    <section class="card">
-      <h2><span class="step">3</span> Review every value, then build the model</h2>
-      <div id="ai-notes" class="notes" hidden></div>
-      <div id="tally" class="tally"></div>
-      <div class="review">
-        <div class="viewer">
-          <div class="viewer-bar">
-            <button id="prev" class="ghost" aria-label="Previous page">&larr;</button>
-            <span id="page-label">No PDF</span>
-            <button id="next" class="ghost" aria-label="Next page">&rarr;</button>
-            <button id="zoom-out" class="ghost" aria-label="Zoom out">&minus;</button>
-            <button id="zoom-in" class="ghost" aria-label="Zoom in">+</button>
+        <div id="view3d" class="view3d">
+          <div id="welcome" class="welcome">
+            <h2>Nothing to show yet</h2>
+            <p>Read a set of drawings with AI, describe the structure in words, open a saved model, or add components by hand.</p>
+            <div class="inline center"><button id="welcome-open">Open an example</button></div>
           </div>
-          <div id="canvas-wrap" class="canvas-wrap"><canvas id="canvas"></canvas></div>
+          <div id="legend" class="legend" hidden></div>
         </div>
-        <div class="form">
+      </div>
+      <div class="pane">
+        <div class="pane-bar">
+          <strong>Drawings</strong>
+          <input id="pdf" type="file" accept="application/pdf" aria-label="Choose a PDF of the drawings">
+          <span class="spacer"></span>
+          <button id="prev" class="ghost small" aria-label="Previous page">&larr;</button>
+          <span id="page-label" class="muted">No PDF</span>
+          <button id="next" class="ghost small" aria-label="Next page">&rarr;</button>
+          <button id="zoom-out" class="ghost small" aria-label="Zoom out">&minus;</button>
+          <button id="zoom-in" class="ghost small" aria-label="Zoom in">+</button>
+        </div>
+        <div id="canvas-wrap" class="canvas-wrap"><p id="no-pdf" class="no-pdf">Choose a PDF to see the drawings here, next to the model. It is optional: you can also describe the structure or build it by hand.</p><canvas id="canvas" hidden></canvas></div>
+      </div>
+    </section>
+
+    <section class="side">
+      <details class="card" open>
+        <summary><span class="step">1</span> Start from drawings or a description</summary>
+        <p class="muted">The PDF stays in your browser. Only the page images you choose are sent to the server and on to the AI model.</p>
+        <div id="read-options" hidden>
           <fieldset>
-            <legend>Project</legend>
-            <div class="meta">
-              <label>Project name <input id="m-project" type="text"></label>
-              <label>Facility <input id="m-facility" type="text"></label>
-              <label>Drawing reference <input id="m-source" type="text" placeholder="Drawing numbers and revision"></label>
-              <label>Author <input id="m-author" type="text"></label>
-            </div>
+            <legend>Pages to read</legend>
+            <div id="pages" class="pages"></div>
           </fieldset>
-          <div id="params"></div>
+          <div class="inline">
+            <label for="detail">Detail per page</label>
+            <select id="detail">
+              <option value="1x1">Overview only</option>
+              <option value="2x2">Overview + 4 close-ups</option>
+              <option value="3x2" selected>Overview + 6 close-ups</option>
+              <option value="4x3">Overview + 12 close-ups</option>
+            </select>
+            <span id="image-count" class="muted"></span>
+          </div>
         </div>
-      </div>
-      <div class="actions">
-        <button id="build">Download IFC model</button>
-        <span id="extra-exports"></span>
-        <button id="save" class="ghost">Save values</button>
-        <label class="ghost filebtn">Load values<input id="load" type="file" accept="application/json" hidden></label>
-      </div>
-      <div id="build-msg" role="status"></div>
+        <label for="notes">Description or notes for the AI</label>
+        <textarea id="notes" rows="3" placeholder="With drawings: anything the reader should know, such as superseded sheets. Without drawings: describe the structure, for example 'timber pier 120 ft by 16 ft, bents at 20 ft with three 12 in piles'."></textarea>
+        <div class="inline">
+          <button id="read">Build model with AI</button>
+          <label for="ai-merge" class="sr">What to do with the result</label>
+          <select id="ai-merge">
+            <option value="replace">Replace the model on screen</option>
+            <option value="add">Add to the model on screen</option>
+          </select>
+        </div>
+        <div id="ai-state" class="muted"></div>
+        <div id="progress" class="muted" role="status"></div>
+      </details>
+
+      <details class="card" open>
+        <summary><span class="step">2</span> Model details <span id="dirty" class="muted"></span></summary>
+        <div class="grid2">
+          <label>Model name <input id="m-name" type="text"></label>
+          <label>Project <input id="m-project" type="text"></label>
+          <label>Structure type <select id="m-structure_type"></select></label>
+          <label>Units <select id="m-units"></select></label>
+          <label>Vertical datum <input id="m-datum" type="text" placeholder="For example MLLW"></label>
+          <label>Drawing reference <input id="m-source_drawings" type="text"></label>
+        </div>
+        <label for="m-description">Description</label>
+        <textarea id="m-description" rows="2"></textarea>
+      </details>
+
+      <details class="card" open>
+        <summary><span class="step">3</span> Components</summary>
+        <div class="inline">
+          <label for="add-type" class="sr">Component type to add</label>
+          <select id="add-type"></select>
+          <button id="add" class="ghost">Add</button>
+          <button id="from-library" class="ghost">From library</button>
+        </div>
+        <ul id="comp-list" class="comp-list"></ul>
+        <div id="editor" class="editor"></div>
+      </details>
+
+      <div id="messages" class="card messages" hidden></div>
     </section>
   </div>
 </main>
-<footer>Models are for reference and coordination. Check every value against the drawings; not for construction.</footer>
+<footer>Models are for reference and coordination. Check every component against the drawings; not for construction.</footer>
+
+<dialog id="dlg-open">
+  <h2>Saved models</h2>
+  <input id="open-q" type="text" placeholder="Search by name, project or type" aria-label="Search saved models">
+  <ul id="open-list" class="pick-list"></ul>
+  <div class="inline end"><button class="ghost" data-close>Close</button></div>
+</dialog>
+<dialog id="dlg-library">
+  <h2>Component library</h2>
+  <input id="lib-q" type="text" placeholder="Search the library" aria-label="Search the library">
+  <ul id="lib-list" class="pick-list"></ul>
+  <div class="inline end"><button class="ghost" data-close>Close</button></div>
+</dialog>
+<dialog id="dlg-savelib">
+  <h2>Save to library</h2>
+  <label>Name <input id="sl-name" type="text"></label>
+  <label>Category <select id="sl-category"></select></label>
+  <label>Description <input id="sl-description" type="text"></label>
+  <label>Tags <input id="sl-tags" type="text" placeholder="Comma separated"></label>
+  <div id="sl-msg" class="error-text"></div>
+  <div class="inline end"><button class="ghost" data-close>Cancel</button><button id="sl-save">Save</button></div>
+</dialog>
 <script type="module" src="static/app.js"></script>
 </body>
 </html>

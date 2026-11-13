@@ -1,27 +1,33 @@
 """Modelling helpers on top of the STEP writer: project setup, geometry, elements, property sets.
 
-Everything is IFC2x3 (Coordination View 2.0), the schema most widely read by BIM and structural tools.
-Geometry is placed in world coordinates; every element has an identity placement under the storey.
+Two schemas are supported. IFC2X3 (Coordination View 2.0) is the most widely read. IFC4X3 adds the
+marine and earthworks classes (IfcMarineFacility, IfcMooringDevice, IfcCourse and so on).
+Geometry is placed in world coordinates; every element has an identity placement under its container.
 """
 import math
 
 from .writer import File, E, Typed, STAR, guid
 
-# Attributes that follow the eight shared product attributes, per IFC2x3 class.
+# Attributes that follow the eight shared product attributes, per schema and class.
+_PT = lambda pt: (E(pt or "NOTDEFINED"),)
 _TAIL = {
-    "IfcBeam": lambda pt: (),
-    "IfcColumn": lambda pt: (),
-    "IfcMember": lambda pt: (),
-    "IfcPlate": lambda pt: (),
-    "IfcWall": lambda pt: (),
-    "IfcDiscreteAccessory": lambda pt: (),
-    "IfcFlowController": lambda pt: (),
-    "IfcRailing": lambda pt: (E(pt or "NOTDEFINED"),),
-    "IfcSlab": lambda pt: (E(pt or "NOTDEFINED"),),
-    "IfcBuildingElementProxy": lambda pt: (None,),
-    "IfcPile": lambda pt: (E(pt or "NOTDEFINED"), None),
-    "IfcElementAssembly": lambda pt: (None, E(pt or "NOTDEFINED")),
+    "IFC2X3": {
+        "IfcBeam": lambda pt: (), "IfcColumn": lambda pt: (), "IfcMember": lambda pt: (), "IfcPlate": lambda pt: (),
+        "IfcWall": lambda pt: (), "IfcDiscreteAccessory": lambda pt: (), "IfcFlowController": lambda pt: (),
+        "IfcRailing": _PT, "IfcSlab": _PT, "IfcFooting": _PT,
+        "IfcBuildingElementProxy": lambda pt: (None,),
+        "IfcPile": lambda pt: (E(pt or "NOTDEFINED"), None),
+        "IfcElementAssembly": lambda pt: (None, E(pt or "NOTDEFINED")),
+    },
+    "IFC4X3": {
+        "IfcBeam": _PT, "IfcColumn": _PT, "IfcMember": _PT, "IfcPlate": _PT, "IfcWall": _PT, "IfcDiscreteAccessory": _PT,
+        "IfcRailing": _PT, "IfcSlab": _PT, "IfcFooting": _PT, "IfcBuildingElementProxy": _PT, "IfcMooringDevice": _PT,
+        "IfcImpactProtectionDevice": _PT, "IfcEarthworksFill": _PT, "IfcCourse": _PT,
+        "IfcPile": lambda pt: (E(pt or "NOTDEFINED"), None),
+        "IfcElementAssembly": lambda pt: (None, E(pt or "NOTDEFINED")),
+    },
 }
+_UNITS = {"FOOT": None, "MILLIMETRE": "MILLI", "METRE": None}
 
 
 def unit_vec(v):
@@ -31,8 +37,16 @@ def unit_vec(v):
 
 class Model(object):
     def __init__(self, project, unit="MILLIMETRE", site="Site", building="Building", storey="Datum",
-                 author="", organization="", timestamp=None, filename="model.ifc"):
-        self.f = File(name=filename, author=author, organization=organization, timestamp=timestamp)
+                 author="", organization="", timestamp=None, filename="model.ifc", schema="IFC2X3",
+                 facility_type="NOTDEFINED"):
+        if schema not in _TAIL:
+            raise ValueError("unsupported IFC schema: %s" % schema)
+        if unit not in _UNITS:
+            raise ValueError("unsupported length unit: %s" % unit)
+        self.schema = schema
+        self.f = File(schema="IFC4X3_ADD2" if schema == "IFC4X3" else schema, name=filename, author=author,
+                      organization=organization, timestamp=timestamp,
+                      view="CoordinationView_V2.0" if schema == "IFC2X3" else "ReferenceView")
         self.seed = project
         self._n = 0
         self._styles = {}
@@ -52,6 +66,8 @@ class Model(object):
             dims = f.add("IfcDimensionalExponents", 1, 0, 0, 0, 0, 0, 0)
             conv = f.add("IfcMeasureWithUnit", Typed("IfcLengthMeasure", 0.3048), metre)
             length = f.add("IfcConversionBasedUnit", dims, E("LENGTHUNIT"), "FOOT", conv)
+        elif unit == "METRE":
+            length = f.add("IfcSIUnit", STAR, E("LENGTHUNIT"), None, E("METRE"))
         else:
             length = f.add("IfcSIUnit", STAR, E("LENGTHUNIT"), E("MILLI"), E("METRE"))
         area = f.add("IfcSIUnit", STAR, E("AREAUNIT"), None, E("SQUARE_METRE"))
@@ -69,15 +85,22 @@ class Model(object):
         p_site = f.add("IfcLocalPlacement", None, self.a3())
         self.site = f.add("IfcSite", self.gid("site"), self.oh, site, None, None, p_site, None, None,
                           E("ELEMENT"), None, None, None, None, None)
-        p_bldg = f.add("IfcLocalPlacement", p_site, self.a3())
-        self.building = f.add("IfcBuilding", self.gid("building"), self.oh, building, None, None, p_bldg,
-                              None, None, E("ELEMENT"), None, None, None)
-        self.p_storey = f.add("IfcLocalPlacement", p_bldg, self.a3())
-        self.storey = f.add("IfcBuildingStorey", self.gid("storey"), self.oh, storey, None, None,
-                            self.p_storey, None, None, E("ELEMENT"), 0.0)
         f.add("IfcRelAggregates", self.gid("agg-site"), self.oh, None, None, self.project, [self.site])
-        f.add("IfcRelAggregates", self.gid("agg-bldg"), self.oh, None, None, self.site, [self.building])
-        f.add("IfcRelAggregates", self.gid("agg-storey"), self.oh, None, None, self.building, [self.storey])
+        if schema == "IFC4X3":
+            self.p_storey = f.add("IfcLocalPlacement", p_site, self.a3())
+            self.building = f.add("IfcMarineFacility", self.gid("facility"), self.oh, building, None, None,
+                                  self.p_storey, None, None, E("ELEMENT"), E(facility_type))
+            self.storey = self.building
+            f.add("IfcRelAggregates", self.gid("agg-bldg"), self.oh, None, None, self.site, [self.building])
+        else:
+            p_bldg = f.add("IfcLocalPlacement", p_site, self.a3())
+            self.building = f.add("IfcBuilding", self.gid("building"), self.oh, building, None, None, p_bldg,
+                                  None, None, E("ELEMENT"), None, None, None)
+            self.p_storey = f.add("IfcLocalPlacement", p_bldg, self.a3())
+            self.storey = f.add("IfcBuildingStorey", self.gid("storey"), self.oh, storey, None, None,
+                                self.p_storey, None, None, E("ELEMENT"), 0.0)
+            f.add("IfcRelAggregates", self.gid("agg-bldg"), self.oh, None, None, self.site, [self.building])
+            f.add("IfcRelAggregates", self.gid("agg-storey"), self.oh, None, None, self.building, [self.storey])
 
     # ---- ids and primitives -------------------------------------------------------------
     def gid(self, tag):
@@ -112,6 +135,9 @@ class Model(object):
 
     def circle(self, name, r):
         return self.f.add("IfcCircleProfileDef", E("AREA"), name, self.a2(), float(r))
+
+    def ring(self, name, r, t):
+        return self.f.add("IfcCircleHollowProfileDef", E("AREA"), name, self.a2(), float(r), float(t))
 
     def channel(self, name, depth, flange_w, web_t, flange_t):
         return self.f.add("IfcUShapeProfileDef", E("AREA"), name, self.a2(), float(depth), float(flange_w),
@@ -187,17 +213,19 @@ class Model(object):
             rend = self.f.add("IfcSurfaceStyleRendering", col, float(transparency), None, None, None, None,
                               None, None, E("FLAT"))
             ss = self.f.add("IfcSurfaceStyle", name, E("BOTH"), [rend])
-            self._styles[name] = self.f.add("IfcPresentationStyleAssignment", [ss])
+            self._styles[name] = ss if self.schema == "IFC4X3" else self.f.add("IfcPresentationStyleAssignment", [ss])
         return self._styles[name]
 
     def material(self, name):
         if name not in self._materials:
-            self._materials[name] = self.f.add("IfcMaterial", name)
+            self._materials[name] = (self.f.add("IfcMaterial", name, None, None) if self.schema == "IFC4X3"
+                                     else self.f.add("IfcMaterial", name))
             self._mat_users[name] = []
         return name
 
     # ---- property sets ------------------------------------------------------------------
     def pset(self, product, name, props):
+        """Attach a property set. Values may be bool, number or text; None values are skipped."""
         items = []
         for key, val in props.items():
             if val is None:
@@ -218,7 +246,7 @@ class Model(object):
 
     # ---- elements -----------------------------------------------------------------------
     def element(self, cls, name, items, style=None, material=None, otype=None, desc=None, props=None,
-                axis=None, predefined=None, parent=None):
+                axis=None, predefined=None, parent=None, pset_name="DrawingSource"):
         f = self.f
         rep = None
         if items:
@@ -241,12 +269,12 @@ class Model(object):
         placement = f.add("IfcLocalPlacement", self.p_storey, self.a3())
         if predefined == "USERDEFINED" and not otype:
             otype = name
-        tail = _TAIL[cls](predefined)
+        tail = _TAIL[self.schema][cls](predefined)
         el = f.add(cls, self.gid(name), self.oh, name, desc, otype, placement, rep, None, *tail)
         if material:
             self._mat_users[self.material(material)].append(el)
         if props:
-            self.pset(el, "DrawingSource", props)
+            self.pset(el, pset_name, props)
         if parent is None:
             self._contained.append(el)
         else:

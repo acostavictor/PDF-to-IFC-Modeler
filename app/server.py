@@ -7,13 +7,20 @@ import sys
 import time
 import traceback
 
-from . import auth, build, config, extract
-from .templates import TEMPLATES, catalogue
+try:
+    from urllib.parse import parse_qs
+except ImportError:                                   # pragma: no cover
+    from urlparse import parse_qs
+
+from . import ai, auth, config, db, service
+from .ifcexport import SCHEMAS
+from .scene import SceneError, catalogue
 
 ROOT = config.ROOT
 STATIC = os.path.join(ROOT, "static")
-VERSION = "1.0.0"
+VERSION = "2.0.0"
 _SAFE = re.compile(r"^[A-Za-z0-9_.-]+$")
+_LOCAL = ("127.0.0.1", "::1", "localhost")
 
 
 class HttpError(Exception):
@@ -36,7 +43,7 @@ def _json(code, data, extra=None):
     return _status(code), headers, body
 
 
-def _file(path, download=None):
+def _file(path):
     with open(path, "rb") as fh:
         body = fh.read()
     ext = os.path.splitext(path)[1].lower()
@@ -72,19 +79,27 @@ def _read_json(environ, cfg):
     return data
 
 
-def _template(data):
-    t = TEMPLATES.get(str(data.get("template") or ""))
-    if t is None:
-        raise HttpError(400, "Unknown structure type.")
-    return t
+def _store(cfg):
+    return db.Store(cfg["DB_PATH"] or db.default_path())
+
+
+def _id(text):
+    try:
+        return int(text)
+    except ValueError:
+        raise HttpError(404, "Not found.")
 
 
 def handle(environ, cfg):
     method = environ.get("REQUEST_METHOD", "GET").upper()
     path = environ.get("PATH_INFO") or "/"
+    query = parse_qs(environ.get("QUERY_STRING") or "")
+    q = lambda key: (query.get(key) or [""])[0]
     secure = environ.get("wsgi.url_scheme") == "https" or environ.get("HTTPS", "").lower() in ("on", "1")
     need_login = bool(cfg["APP_PASSWORD"])
     logged_in = need_login and auth.token_ok(cfg, auth.cookie_from(environ))
+    # Without a password, the database and the AI are only offered to someone on the same machine.
+    trusted = logged_in or (not need_login and environ.get("REMOTE_ADDR") in _LOCAL)
 
     if path in ("/", "/index.html") and method == "GET":
         return _file(os.path.join(ROOT, "index.html"))
@@ -96,18 +111,25 @@ def handle(environ, cfg):
         return _file(full)
     if not path.startswith("/api/"):
         raise HttpError(404, "Not found.")
+    post = method == "POST"
 
     if path == "/api/health":
-        return _json(200, {"ok": True, "version": VERSION, "python": sys.version.split()[0],
-                           "login_required": need_login, "logged_in": logged_in,
-                           "ai_ready": bool(cfg["ANTHROPIC_API_KEY"]) and need_login,
-                           "ai_reason": "" if (cfg["ANTHROPIC_API_KEY"] and need_login) else (
-                               "Set APP_PASSWORD on the server to enable AI reading." if cfg["ANTHROPIC_API_KEY"]
-                               else "No Anthropic API key is configured on the server."),
-                           "model": cfg["ANTHROPIC_MODEL"], "max_images": cfg["MAX_IMAGES"],
-                           "max_body_mb": cfg["MAX_BODY_MB"], "config_file_found": bool(cfg["_file"])})
+        db_error, counts = "", {}
+        try:
+            counts = _store(cfg).counts() if trusted else {}
+        except Exception as err:                       # a broken database must not take the whole app down
+            db_error = "%s: %s" % (type(err).__name__, err)
+        ai_ready = bool(cfg["ANTHROPIC_API_KEY"]) and trusted
+        return _json(200, {
+            "ok": True, "version": VERSION, "python": sys.version.split()[0], "login_required": need_login, "logged_in": logged_in,
+            "storage": "server" if trusted and not db_error else "browser", "db_error": db_error, "db_counts": counts,
+            "storage_reason": "" if trusted else "Set APP_PASSWORD on the server to use the shared database.",
+            "ai_ready": ai_ready, "model": cfg["ANTHROPIC_MODEL"],
+            "ai_reason": "" if ai_ready else ("No Anthropic API key is configured on the server." if trusted
+                                              else "Set APP_PASSWORD on the server to enable AI."),
+            "max_images": cfg["MAX_IMAGES"], "max_body_mb": cfg["MAX_BODY_MB"], "config_file_found": bool(cfg["_file"])})
     if path == "/api/login":
-        if method != "POST":
+        if not post:
             raise HttpError(405, "Use POST.")
         data = _read_json(environ, cfg)
         if not auth.password_ok(cfg, data.get("password")):
@@ -116,32 +138,68 @@ def handle(environ, cfg):
         return _json(200, {"ok": True}, [("Set-Cookie", auth.set_cookie(auth.new_token(cfg), secure))])
     if path == "/api/logout":
         return _json(200, {"ok": True}, [("Set-Cookie", auth.clear_cookie())])
-
     if need_login and not logged_in:
         raise HttpError(401, "Please sign in.")
-    if path == "/api/templates" and method == "GET":
-        return _json(200, {"templates": catalogue()})
-    if path not in ("/api/extract", "/api/generate"):
-        raise HttpError(404, "Not found.")
-    if method != "POST":
-        raise HttpError(405, "Use POST.")
-    data = _read_json(environ, cfg)
 
-    if path == "/api/extract":
-        if not need_login:
-            raise HttpError(403, "AI reading is off until APP_PASSWORD is set on the server.")
-        t = _template(data)
-        try:
-            return _json(200, extract.extract(cfg, t, data.get("images"), data.get("notes") or ""))
-        except extract.ExtractError as err:
-            raise HttpError(err.status, str(err))
-    if path == "/api/generate":
-        try:
-            text, filename, ctype = build.generate(data.get("template"), data.get("format"), data.get("params"), data.get("meta"))
-        except build.BuildError as err:
-            raise HttpError(400, str(err))
-        return _download(text, filename, ctype)
-    raise HttpError(404, "Not found.")
+    if path == "/api/seed" and method == "GET":
+        return _file(db.SEED)
+    if path == "/api/catalogue" and method == "GET":
+        return _json(200, dict(catalogue(), ifc_schemas=list(SCHEMAS)))
+    try:
+        if path in ("/api/preview", "/api/export", "/api/convert", "/api/compose"):
+            if not post:
+                raise HttpError(405, "Use POST.")
+            data = _read_json(environ, cfg)
+            if path == "/api/preview":
+                return _json(200, service.preview(data.get("scene")))
+            if path == "/api/export":
+                text, filename = service.export(data.get("scene"), str(data.get("schema") or "IFC2X3"))
+                return _download(text, filename, "application/x-step")
+            if path == "/api/convert":
+                return _json(200, service.convert(data))
+            if not trusted:
+                raise HttpError(403, "AI is off until APP_PASSWORD is set on the server.")
+            try:
+                return _json(200, ai.compose(cfg, data.get("images"), data.get("notes") or "", str(data.get("units") or "")))
+            except ai.AiError as err:
+                raise HttpError(err.status, str(err))
+
+        m = re.match(r"^/api/(models|library)(?:/(\d+))?(/delete)?$", path)
+        if not m:
+            raise HttpError(404, "Not found.")
+        if not trusted:
+            raise HttpError(403, "The shared database is off until APP_PASSWORD is set on the server.")
+        kind, item_id, delete = m.group(1), (_id(m.group(2)) if m.group(2) else None), bool(m.group(3))
+        store = _store(cfg)
+        if kind == "models":
+            if delete and post:
+                store.delete_model(item_id)
+                return _json(200, {"ok": True})
+            if post and not delete:
+                data = _read_json(environ, cfg)
+                new_id = store.save_model(data.get("scene"), item_id if item_id is not None else data.get("id"))
+                return _json(200, {"id": new_id})
+            if method == "GET" and item_id is None:
+                return _json(200, {"models": store.list_models(q("q"))})
+            if method == "GET":
+                return _json(200, store.get_model(item_id))
+        else:
+            if delete and post:
+                store.delete_library(item_id)
+                return _json(200, {"ok": True})
+            if post and not delete:
+                data = _read_json(environ, cfg)
+                new_id = store.save_library(data, item_id if item_id is not None else data.get("id"))
+                return _json(200, {"id": new_id})
+            if method == "GET" and item_id is None:
+                return _json(200, {"items": store.list_library(q("q"))})
+            if method == "GET":
+                return _json(200, store.get_library(item_id))
+        raise HttpError(405, "Method not allowed.")
+    except SceneError as err:
+        raise HttpError(400, str(err))
+    except db.NotFound as err:
+        raise HttpError(404, str(err))
 
 
 def application(environ, start_response):
