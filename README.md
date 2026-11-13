@@ -92,7 +92,7 @@ downloads about 13 MB (Pyodide, from the jsDelivr CDN).
 
 Tested:
 
-- 36 unit tests on Python 3.8 and 3.13. With IfcOpenShell installed, every example model and library item
+- 44 unit tests on Python 3.8 and 3.13. With IfcOpenShell installed, every example model and library item
   is exported in both schemas, validated against the schema, checked to produce geometry for every piece,
   and compared with the preview's extents.
 - The browser flows in Chromium: open, edit, save, library insert, unit change, export, sign-in, and
@@ -101,7 +101,8 @@ Tested:
 
 Not yet tested:
 
-- **A real call to the Claude API.** How well it reads a given drawing set is unknown until you try it.
+- **A real call to the Claude API.** `tools/setup_server.py --ai-test` makes one from your server with your
+  key. How well it reads a given drawing set is unknown until you try it.
 - **Running on HostGator**, including whether its Python has the `sqlite3` module (`/api/health` reports it).
 - **Opening the exports in Revit, Navisworks or STAAD.** Only IfcOpenShell has read them.
 
@@ -117,8 +118,17 @@ Not yet tested:
 python3 tools/dev_server.py
 ```
 
-Open http://localhost:8000/. On your own machine the database works without a password. To turn on AI, copy
-`config.example.json` to `config.local.json` and fill it in.
+Open http://localhost:8000/. On your own machine the database works without a password.
+
+To turn on AI, run the set-up script. It asks for your Anthropic API key and a password without showing
+them, saves them to a private file outside the repository, and checks the machine, including a free call
+that proves the key and the connection:
+
+```
+python3 tools/setup_server.py              # set up and check
+python3 tools/setup_server.py --check      # check only
+python3 tools/setup_server.py --check --ai-test    # also one small real AI run, billed to your key
+```
 
 ## Configuration
 
@@ -143,7 +153,12 @@ There is one shared password and no user accounts; everyone who has it sees and 
 
 ## Deploying
 
-See [docs/DEPLOY_HOSTGATOR.md](docs/DEPLOY_HOSTGATOR.md) for shared cPanel hosting.
+See [docs/DEPLOY_HOSTGATOR.md](docs/DEPLOY_HOSTGATOR.md) for shared cPanel hosting. In short: clone the
+repository into a folder under `public_html`, run `python3 tools/setup_server.py` there, and open the folder's
+address over HTTPS.
+
+Long AI runs: shared hosts stop a request whose script stays silent, so the server sends a keep-alive byte
+every 10 seconds while Claude works. A host's hard limit on total request time still applies.
 
 ## Privacy
 
@@ -165,6 +180,7 @@ app/db.py, app/seed.json   SQLite storage; starter library and example models
 app/ai.py                  the Claude API request, prompt and response handling
 app/server.py              routes; app/browser.py is the same engine for the preview site
 tests/                     unit tests
+tools/setup_server.py      writes the private config and checks a server, including the Claude connection
 tools/                     local server, seed generator, IFC validation with IfcOpenShell (developer only)
 ```
 

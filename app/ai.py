@@ -9,6 +9,7 @@ import re
 import socket
 
 from urllib.request import Request, urlopen
+from urllib.parse import quote
 from urllib.error import HTTPError, URLError
 
 from . import scene as scene_mod
@@ -181,6 +182,44 @@ def call_api(cfg, payload, opener=urlopen):
         if isinstance(getattr(err, "reason", None), socket.timeout):
             raise AiError("The Claude API timed out. Try fewer pages or a lower detail level.", 504)
         raise AiError("Could not reach the Claude API from this server: %s" % err.reason, 502)
+
+
+def check_model(cfg, opener=urlopen):
+    """Ask the API about the configured model. Costs nothing, and proves the key, the model name and the network path."""
+    if not cfg.get("ANTHROPIC_API_KEY"):
+        raise AiError("No Anthropic API key is configured on the server.", 503)
+    url = cfg["ANTHROPIC_URL"].rsplit("/", 1)[0] + "/models/" + quote(str(cfg["ANTHROPIC_MODEL"]), safe="")
+    req = Request(url, method="GET", headers={"x-api-key": cfg["ANTHROPIC_API_KEY"], "anthropic-version": cfg["ANTHROPIC_VERSION"]})
+    try:
+        info = json.loads(opener(req, timeout=30).read().decode("utf-8"))
+    except HTTPError as err:
+        detail = ""
+        try:
+            detail = json.loads(err.read().decode("utf-8")).get("error", {}).get("message", "")
+        except Exception:
+            pass
+        if err.code in (401, 403):
+            raise AiError("The Anthropic API key was not accepted (%d). %s" % (err.code, detail), 502)
+        if err.code == 404:
+            raise AiError("This API key cannot use the model '%s' (404). %s" % (cfg["ANTHROPIC_MODEL"], detail), 502)
+        raise AiError("The Claude API returned an error (%d). %s" % (err.code, detail), 502)
+    except socket.timeout:
+        raise AiError("The Claude API did not answer within 30 seconds.", 504)
+    except URLError as err:
+        raise AiError("Could not reach the Claude API from this server: %s" % err.reason, 502)
+    except ValueError:
+        raise AiError("The Claude API sent a reply that could not be read.", 502)
+    caps = info.get("capabilities") or {}
+    out = {"ok": True, "model": info.get("id") or cfg["ANTHROPIC_MODEL"], "display_name": info.get("display_name") or "",
+           "lifecycle": info.get("lifecycle") or "", "images": (caps.get("image_input") or {}).get("supported"),
+           "max_output_tokens": info.get("max_tokens") or None, "warnings": []}
+    if out["images"] is False:
+        out["warnings"].append("This model does not accept images, so it cannot read drawings.")
+    if out["lifecycle"] in ("deprecated", "retired"):
+        out["warnings"].append("This model is %s; set ANTHROPIC_MODEL to a current one." % out["lifecycle"])
+    if out["max_output_tokens"] and cfg["MAX_OUTPUT_TOKENS"] > out["max_output_tokens"]:
+        out["warnings"].append("MAX_OUTPUT_TOKENS (%d) is above this model's limit (%d)." % (cfg["MAX_OUTPUT_TOKENS"], out["max_output_tokens"]))
+    return out
 
 
 def _json_from_text(text):

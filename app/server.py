@@ -4,6 +4,7 @@ import mimetypes
 import os
 import re
 import sys
+import threading
 import time
 import traceback
 
@@ -18,7 +19,8 @@ from .scene import SceneError, catalogue
 
 ROOT = config.ROOT
 STATIC = os.path.join(ROOT, "static")
-VERSION = "2.0.0"
+VERSION = "2.1.0"
+HEARTBEAT = 10.0                                      # seconds between keep-alive bytes during an AI run
 _SAFE = re.compile(r"^[A-Za-z0-9_.-]+$")
 _LOCAL = ("127.0.0.1", "::1", "localhost")
 
@@ -77,6 +79,41 @@ def _read_json(environ, cfg):
     if not isinstance(data, dict):
         raise HttpError(400, "Request body must be a JSON object.")
     return data
+
+
+def _compose_stream(cfg, data):
+    """Run the AI call while sending a space every few seconds, then the JSON result.
+
+    Shared hosts stop a request whose script stays silent too long, and an AI run can take minutes. JSON may start
+    with white space, so the browser reads the reply as usual. The status line has gone out by the time the
+    result is known, so a failure is reported inside the body as {"error": ..., "status": ...}.
+    """
+    result = {}
+
+    def work():
+        try:
+            result["body"] = ai.compose(cfg, data.get("images"), data.get("notes") or "", str(data.get("units") or ""))
+        except ai.AiError as err:
+            result["body"] = {"error": str(err), "status": err.status}
+        except Exception:
+            traceback.print_exc(file=sys.stderr)
+            result["body"] = {"error": "The server hit an unexpected error. Check the host's error log.", "status": 500}
+
+    worker = threading.Thread(target=work)
+    worker.daemon = True
+    worker.start()
+
+    def body():
+        yield b" "                                     # sends the headers straight away
+        while True:
+            worker.join(HEARTBEAT)
+            if not worker.is_alive():
+                break
+            yield b" "
+        yield json.dumps(result["body"]).encode("utf-8")
+
+    return _status(200), [("Content-Type", "application/json; charset=utf-8"), ("Cache-Control", "no-store"),
+                          ("X-Accel-Buffering", "no")], body()
 
 
 def _store(cfg):
@@ -146,6 +183,15 @@ def handle(environ, cfg):
     if path == "/api/catalogue" and method == "GET":
         return _json(200, dict(catalogue(), ifc_schemas=list(SCHEMAS)))
     try:
+        if path == "/api/ai-check":
+            if not post:
+                raise HttpError(405, "Use POST.")
+            if not trusted:
+                raise HttpError(403, "AI is off until APP_PASSWORD is set on the server.")
+            try:
+                return _json(200, ai.check_model(cfg))
+            except ai.AiError as err:
+                raise HttpError(err.status, str(err))
         if path in ("/api/preview", "/api/export", "/api/convert", "/api/compose"):
             if not post:
                 raise HttpError(405, "Use POST.")
@@ -159,10 +205,13 @@ def handle(environ, cfg):
                 return _json(200, service.convert(data))
             if not trusted:
                 raise HttpError(403, "AI is off until APP_PASSWORD is set on the server.")
-            try:
-                return _json(200, ai.compose(cfg, data.get("images"), data.get("notes") or "", str(data.get("units") or "")))
+            try:                                      # what can be refused at once is refused with a proper status
+                if not cfg["ANTHROPIC_API_KEY"]:
+                    raise ai.AiError("No Anthropic API key is configured on the server.", 503)
+                ai.check_input(cfg, data.get("images") or [], data.get("notes") or "")
             except ai.AiError as err:
                 raise HttpError(err.status, str(err))
+            return _compose_stream(cfg, data)
 
         m = re.match(r"^/api/(models|library)(?:/(\d+))?(/delete)?$", path)
         if not m:
@@ -213,4 +262,4 @@ def application(environ, start_response):
         status, headers, body = _json(500, {"error": "The server hit an unexpected error. Check the host's error log."})
     headers += [("X-Content-Type-Options", "nosniff"), ("Referrer-Policy", "same-origin")]
     start_response(status, headers)
-    return [body]
+    return [body] if isinstance(body, bytes) else body

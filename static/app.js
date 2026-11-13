@@ -196,6 +196,7 @@ async function start() {
   const hl = state.health;
   $("login").hidden = true; $("logout").hidden = !hl.login_required; $("app").hidden = false; $("toolbar").hidden = false;
   $("ai-state").textContent = hl.ai_ready ? "AI model: " + hl.model : hl.ai_reason;
+  $("ai-test").hidden = !hl.ai_ready;
   fill($("m-structure_type"), [""].concat(state.cat.structure_types), (v) => v || "Choose a type");
   fill($("m-units"), state.cat.units, (v) => ({ ft: "Feet", m: "Metres", mm: "Millimetres" }[v]));
   fill($("add-type"), state.cat.types.map((t) => t.id), (v) => typeOf(v).title);
@@ -543,6 +544,7 @@ $("read").addEventListener("click", async () => {
     if (mb > state.health.max_body_mb * 0.95) throw new AppError("These images total " + mb.toFixed(0) + " MB, over the server limit of " + state.health.max_body_mb + " MB. Choose fewer pages or less detail.");
     prog.textContent = (images.length ? "Sending " + images.length + " images (" + mb.toFixed(1) + " MB). " : "") + "The AI is building the model. This can take a few minutes.";
     const out = await (await api("compose", { images, notes: $("notes").value, units: state.scene.components.length ? state.scene.units : "" })).json();
+    if (out.error) throw new AppError(out.error);      // the server keeps the connection alive during the run, so failures arrive in the body
     const u = out.usage || {};
     prog.textContent = "The AI returned " + out.scene.components.length + " component(s), " + out.pieces + " pieces" +
       (u.input_tokens ? " (" + u.input_tokens + " input and " + (u.output_tokens || 0) + " output tokens)" : "") + ". Check each one against the drawings.";
@@ -558,6 +560,14 @@ $("read").addEventListener("click", async () => {
     }
   } catch (e) { prog.textContent = ""; banner(e.message, true); }
   updateCount();
+});
+
+$("ai-test").addEventListener("click", async () => {
+  const box = $("ai-state"); box.textContent = "Testing the connection to the Claude API…";
+  try {
+    const r = await (await api("ai-check", {})).json();
+    box.textContent = "Connection works: " + (r.display_name || r.model) + " answered, and the key is accepted." + (r.warnings.length ? " Note: " + r.warnings.join(" ") : "");
+  } catch (e) { box.textContent = "Connection test failed. " + e.message; }
 });
 
 async function showPage() {

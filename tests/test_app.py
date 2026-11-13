@@ -7,6 +7,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -168,6 +169,42 @@ class AiTest(Env):
         sc = ai.parse_response({"stop_reason": "end_turn", "content": [{"type": "text", "text": text}]})[0]
         self.assertEqual((sc["units"], sc["components"][0]["name"]), ("m", "Cap {A}"))
 
+    def test_connection_check(self):
+        from urllib.error import HTTPError, URLError
+        seen = {}
+
+        def good(req, timeout):
+            seen["req"] = req
+            return FakeResponse({"type": "model", "id": "claude-opus-5-5", "display_name": "Claude Opus 5.5", "lifecycle": "active", "max_tokens": 64000,
+                                 "capabilities": {"image_input": {"supported": True}}})
+
+        out = ai.check_model(self.cfg(), good)
+        self.assertEqual((out["ok"], out["display_name"], out["images"], out["warnings"]), (True, "Claude Opus 5.5", True, []))
+        self.assertEqual((seen["req"].get_method(), seen["req"].full_url), ("GET", "https://api.anthropic.com/v1/models/claude-opus-5-5"))
+        self.assertEqual({k.lower(): v for k, v in seen["req"].header_items()}["x-api-key"], "sk-test")
+
+        def limited(req, timeout):
+            return FakeResponse({"id": "old", "lifecycle": "deprecated", "max_tokens": 4096, "capabilities": {"image_input": {"supported": False}}})
+
+        self.assertEqual(len(ai.check_model(self.cfg(), limited)["warnings"]), 3)
+
+        def refuse(code):
+            def opener(req, timeout):
+                raise HTTPError(req.full_url, code, "x", {}, io.BytesIO(b'{"error": {"message": "detail here"}}'))
+            return opener
+
+        def offline(req, timeout):
+            raise URLError("certificate verify failed")
+
+        for opener, text in ((refuse(401), "key was not accepted"), (refuse(404), "cannot use the model 'claude-opus-5-5'"), (refuse(529), "returned an error (529). detail here"),
+                             (offline, "Could not reach the Claude API from this server: certificate verify failed")):
+            with self.assertRaises(ai.AiError) as caught:
+                ai.check_model(self.cfg(), opener)
+            self.assertIn(text, str(caught.exception))
+        with self.assertRaises(ai.AiError) as caught:
+            ai.check_model(self.cfg(ANTHROPIC_API_KEY=""))
+        self.assertEqual(caught.exception.status, 503)
+
     def test_failures_are_reported(self):
         from urllib.error import HTTPError, URLError
         import socket
@@ -302,6 +339,66 @@ class ServerTest(Env):
         self.assertEqual(status, 413)
         self.assertEqual(post("/api/compose", {"images": [], "notes": "A pier"})[0], 503)           # no key configured
 
+    def test_an_ai_run_keeps_the_connection_alive_and_reports_failures_in_the_body(self):
+        os.environ["ANTHROPIC_API_KEY"] = "sk-test"
+        real_compose, real_beat = ai.compose, server.HEARTBEAT
+        calls = []
+
+        def slow(cfg, images, notes, units):
+            calls.append((images, notes, units))
+            time.sleep(0.35)
+            if notes == "fail":
+                raise ai.AiError("The Claude API returned an error (529). Overloaded", 502)
+            if notes == "crash":
+                raise RuntimeError("boom")
+            return {"scene": scene.normalise(PIER), "pieces": 9, "missing": [], "rejected": [], "general_notes": "", "usage": {}}
+
+        ai.compose, server.HEARTBEAT = slow, 0.1
+        try:
+            status, headers, body = request("POST", "/api/compose", {"images": [], "notes": "A pier", "units": "m"})
+            self.assertEqual(status, 200)
+            self.assertNotIn("Content-Length", headers)
+            self.assertGreaterEqual(len(body) - len(body.lstrip(b" ")), 2, "keep-alive bytes go out while the model works")
+            self.assertEqual(json.loads(body)["pieces"], 9)
+            self.assertEqual(calls[0], ([], "A pier", "m"))
+            status, _, body = request("POST", "/api/compose", {"images": [], "notes": "fail"})
+            self.assertEqual((status, json.loads(body)), (200, {"error": "The Claude API returned an error (529). Overloaded", "status": 502}))
+            err = io.StringIO()
+            old, sys.stderr = sys.stderr, err
+            try:
+                status, _, body = request("POST", "/api/compose", {"images": [], "notes": "crash"})
+            finally:
+                sys.stderr = old
+            self.assertEqual(json.loads(body)["status"], 500)
+            self.assertNotIn("boom", body.decode("utf-8"))
+            self.assertIn("boom", err.getvalue())
+            # what can be refused at once still gets a proper status, and never reaches the model
+            n = len(calls)
+            self.assertEqual(post("/api/compose", {"images": [], "notes": " "})[0], 400)
+            self.assertEqual(post("/api/compose", {"images": [{"media_type": "image/gif", "data": "x"}]})[0], 400)
+            self.assertEqual(post("/api/compose", {"images": [], "notes": "A pier"}, addr="203.0.113.9")[0], 403)
+            self.assertEqual(len(calls), n)
+        finally:
+            ai.compose, server.HEARTBEAT = real_compose, real_beat
+
+    def test_connection_check_route(self):
+        self.assertEqual(post("/api/ai-check", {})[0], 503)                                         # no key yet
+        os.environ["ANTHROPIC_API_KEY"] = "sk-test"
+        self.assertEqual(post("/api/ai-check", {}, addr="203.0.113.9")[0], 403)
+        self.assertEqual(request("GET", "/api/ai-check")[0], 405)
+        real = ai.check_model
+        try:
+            ai.check_model = lambda cfg: {"ok": True, "model": "m", "display_name": "M", "warnings": []}
+            self.assertEqual(post("/api/ai-check", {}), (200, {"ok": True, "model": "m", "display_name": "M", "warnings": []}))
+
+            def broken(cfg):
+                raise ai.AiError("The Anthropic API key was not accepted (401). invalid x-api-key", 502)
+            ai.check_model = broken
+            status, out = post("/api/ai-check", {})
+            self.assertEqual((status, out["error"]), (502, "The Anthropic API key was not accepted (401). invalid x-api-key"))
+        finally:
+            ai.check_model = real
+
     def test_a_visitor_from_elsewhere_gets_no_database_and_no_ai_without_a_password(self):
         os.environ["ANTHROPIC_API_KEY"] = "sk-test"
         there = {"addr": "203.0.113.9"}
@@ -370,6 +467,125 @@ class CgiTest(Env):
         out = subprocess.run([sys.executable, os.path.join(ROOT, "index.cgi")], env=env, input=body, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=60).stdout
         self.assertIn(b"ISO-10303-21;", out)
         self.assertIn(b"IFCMARINEFACILITY", out)
+
+
+class SetupScriptTest(Env):
+    """tools/setup_server.py: writes the private config and checks the machine."""
+    def setUp(self):
+        Env.setUp(self)
+        sys.path.insert(0, os.path.join(ROOT, "tools"))
+        import setup_server
+        self.tool = setup_server
+        self.home, os.environ["HOME"] = os.environ.get("HOME"), self.tmp
+        self.cfg_path = os.path.join(self.tmp, "private", "config.json")
+        os.environ["PDF2IFC_CONFIG"] = self.cfg_path
+        self.mode = os.stat(os.path.join(ROOT, "index.cgi")).st_mode
+
+    def tearDown(self):
+        os.chmod(os.path.join(ROOT, "index.cgi"), self.mode)
+        if self.home is not None:
+            os.environ["HOME"] = self.home
+        Env.tearDown(self)
+
+    def run_tool(self, argv, secrets_typed=(), answers=(), opener=None):
+        out, typed, said = io.StringIO(), list(secrets_typed), list(answers)
+        code = self.tool.main(argv, ask=lambda prompt: said.pop(0), ask_secret=lambda prompt: typed.pop(0), out=out, opener=opener)
+        self.assertEqual((typed, said), ([], []), "every prompt answer should have been used")
+        return code, out.getvalue()
+
+    @staticmethod
+    def api(req, timeout):
+        if req.get_method() == "GET":
+            return FakeResponse({"id": "claude-opus-5-5", "display_name": "Claude Opus 5.5", "lifecycle": "active", "capabilities": {"image_input": {"supported": True}}})
+        return FakeResponse(tool_reply({"name": "Pier", "units": "ft", "components": [
+            {"type": "pile", "name": "Piles", "source": "dimensioned", "array": {"nx": 4, "dx": 20, "ny": 2, "dy": 8}, "params": {}},
+            {"type": "slab", "name": "Deck", "source": "dimensioned", "params": {}}]}))
+
+    def test_first_run_writes_a_private_config_and_everything_passes(self):
+        code, text = self.run_tool([], secrets_typed=["sk-ant-test-1234", "a long password", "a long password"], opener=self.api)
+        self.assertEqual(code, 0, text)
+        with open(self.cfg_path) as fh:
+            self.assertEqual(json.load(fh), {"ANTHROPIC_API_KEY": "sk-ant-test-1234", "APP_PASSWORD": "a long password"})
+        if os.name != "nt":
+            self.assertEqual(os.stat(self.cfg_path).st_mode & 0o777, 0o600)
+            self.assertEqual(os.stat(os.path.dirname(self.cfg_path)).st_mode & 0o777, 0o700)
+        self.assertNotIn("sk-ant-test-1234", text)
+        self.assertNotIn("a long password", text)
+        self.assertIn("ends in ...1234", text)
+        for line in ("Python version", "SQLite", "Database", "Web entry point (index.cgi): answers as version %s; sign-in required" % server.VERSION,
+                     "Claude API connection: Claude Opus 5.5 answered", "Ready. Open the app's address in a browser and sign in."):
+            self.assertIn(line, text)
+        self.assertNotIn("FAIL", text)
+        self.assertTrue(os.path.isfile(os.environ["DB_PATH"]))
+        # a second run asks nothing and changes nothing
+        before = os.stat(self.cfg_path).st_mtime_ns
+        code, text = self.run_tool([], opener=self.api)
+        self.assertEqual((code, os.stat(self.cfg_path).st_mtime_ns), (0, before))
+
+    def test_a_password_is_made_when_none_is_typed_and_weak_ones_are_refused(self):
+        code, text = self.run_tool(["--check"])
+        self.assertEqual(code, 0)
+        self.assertFalse(os.path.exists(self.cfg_path), "--check writes nothing")
+        self.assertIn("App password: not set", text)
+        code, text = self.run_tool([], secrets_typed=["", "short", "long enough one", "different one", ""])
+        with open(self.cfg_path) as fh:
+            saved = json.load(fh)
+        self.assertEqual(list(saved), ["APP_PASSWORD"])
+        self.assertGreaterEqual(len(saved["APP_PASSWORD"]), 20)
+        self.assertIn(saved["APP_PASSWORD"], text, "a generated password is shown once so it can be stored")
+        self.assertIn("Use at least 10 characters.", text)
+        self.assertIn("The two did not match.", text)
+        self.assertIn("Anthropic API key: not set", text)
+
+    def test_existing_settings_are_kept(self):
+        self.tool.write_config(self.cfg_path, {"ANTHROPIC_API_KEY": "paste-your-key-here", "APP_PASSWORD": "kept password", "MAX_IMAGES": 40})
+        code, text = self.run_tool([], secrets_typed=["sk-ant-new"], opener=self.api)
+        with open(self.cfg_path) as fh:
+            self.assertEqual(json.load(fh), {"ANTHROPIC_API_KEY": "sk-ant-new", "APP_PASSWORD": "kept password", "MAX_IMAGES": 40})
+
+    def test_problems_are_named_with_a_fix(self):
+        from urllib.error import HTTPError
+        self.tool.write_config(self.cfg_path, {"ANTHROPIC_API_KEY": "sk-ant-bad", "APP_PASSWORD": "a long password"})
+
+        def refused(req, timeout):
+            raise HTTPError(req.full_url, 401, "x", {}, io.BytesIO(b'{"error": {"message": "invalid x-api-key"}}'))
+
+        code, text = self.run_tool(["--check", "--ai-test"], opener=refused)
+        self.assertEqual(code, 1)
+        self.assertIn("[ FAIL ] Claude API connection: The Anthropic API key was not accepted (401). invalid x-api-key", text)
+        self.assertIn("AI test run: skipped", text)
+        self.assertIn("1 problem(s) to fix: Claude API connection", text)
+        if os.name != "nt":
+            os.chmod(os.path.join(ROOT, "index.cgi"), 0o644)
+            code, text = self.run_tool(["--check"], opener=self.api)
+            self.assertEqual(code, 1)
+            self.assertIn("[ FAIL ] Permissions", text)
+            code, text = self.run_tool([], opener=self.api)                    # without --check it repairs them
+            self.assertEqual(code, 0, text)
+            self.assertEqual(os.stat(os.path.join(ROOT, "index.cgi")).st_mode & 0o777, 0o755)
+        with open(self.cfg_path, "w") as fh:
+            fh.write("{broken")
+        self.assertEqual(self.run_tool([])[0], 2)
+        self.assertEqual(self.run_tool(["--check"])[0], 1)
+
+    def test_billed_test_run_asks_first(self):
+        self.tool.write_config(self.cfg_path, {"ANTHROPIC_API_KEY": "sk-ant-ok", "APP_PASSWORD": "a long password"})
+        posts = []
+
+        def api(req, timeout):
+            if req.get_method() == "POST":
+                posts.append(json.loads(req.data.decode("utf-8")))
+            return self.api(req, timeout)
+
+        code, text = self.run_tool(["--check", "--ai-test"], answers=["n"], opener=api)
+        self.assertEqual((code, posts), (0, []))
+        code, text = self.run_tool(["--check", "--ai-test"], answers=["y"], opener=api)
+        self.assertEqual((code, len(posts)), (0, 1))
+        self.assertEqual(posts[0]["messages"][0]["content"][0]["type"], "text")
+        self.assertIn("AI test run: 2 components, 9 pieces", text)
+        self.assertIn("- Piles (pile, sizes dimensioned)", text)
+        code, text = self.run_tool(["--check", "--ai-test", "--yes"], opener=api)
+        self.assertEqual(len(posts), 2)
 
 
 class PackagingTest(unittest.TestCase):
