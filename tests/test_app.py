@@ -9,6 +9,7 @@ import sys
 import tempfile
 import time
 import unittest
+from urllib.error import HTTPError
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
@@ -285,6 +286,25 @@ class AiTest(Env):
         self.assertEqual(len(text), 1)
         self.assertIn("Description from the user:", text[0]["text"])
 
+    def test_gemini_list_shaped_error_body_is_read(self):
+        # Gemini's OpenAI-compatible layer wraps errors in a one-item list; the native API and Anthropic return an
+        # object. Both shapes must surface the message, or the user sees only a bare status code.
+        def failing_list(req, timeout):
+            raise HTTPError(req.full_url, 503, "Unavailable", {},
+                            io.BytesIO(b'[{"error": {"code": 503, "message": "high demand", "status": "UNAVAILABLE"}}]'))
+
+        with self.assertRaises(ai.AiError) as caught:
+            ai.call_api(self.gemini_cfg(), {"model": "gemini-3.8-flash", "messages": []}, failing_list)
+        self.assertIn("high demand", str(caught.exception))
+
+        def failing_object(req, timeout):
+            raise HTTPError(req.full_url, 400, "Bad Request", {},
+                            io.BytesIO(b'{"error": {"message": "bad key"}}'))
+
+        with self.assertRaises(ai.AiError) as caught:
+            ai.call_api(self.gemini_cfg(), {"model": "gemini-3.8-flash", "messages": []}, failing_object)
+        self.assertIn("bad key", str(caught.exception))
+
     def test_gemini_tool_call_is_read_and_bad_parts_reported(self):
         reply = openai_reply({"name": "Pier", "structure_type": "Pier or jetty", "units": "ft", "datum": "MLLW", "components": [
             {"type": "pile", "name": "Good", "source": "scaled", "params": {"size": 1.5}},
@@ -349,6 +369,18 @@ class AiTest(Env):
             return FakeResponse({"object": "list", "data": [{"id": "gemini-2.5-pro", "object": "model"}]})
 
         self.assertEqual(len(ai.check_model(self.gemini_cfg(), unlisted)["warnings"]), 1)
+
+        def compat_missing(req, timeout):
+            # Gemini's OpenAI-compatible layer has no /models endpoint: it 404s,
+            # so the check falls back to the native list one level up.
+            if req.full_url.endswith("/openai/models"):
+                raise HTTPError(req.full_url, 404, "Not Found", {}, io.BytesIO(b'{"error": {"message": "Requested entity was not found."}}'))
+            seen["fallback_url"] = req.full_url
+            return FakeResponse({"models": [{"name": "models/gemini-2.5-flash"}, {"name": "models/gemini-3.8-flash"}]})
+
+        out = ai.check_model(self.gemini_cfg(), compat_missing)
+        self.assertEqual((out["ok"], out["model"], out["warnings"]), (True, "gemini-2.5-flash", []))
+        self.assertEqual(seen["fallback_url"], "https://generativelanguage.googleapis.com/v1beta/models")
 
         def refuse(code):
             def opener(req, timeout):
