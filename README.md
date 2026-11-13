@@ -150,7 +150,7 @@ a public server.
 | `AI_PROVIDER` | Which AI service reads the drawings: `anthropic` or `gemini`. | `anthropic` |
 | `ANTHROPIC_API_KEY` | Your Anthropic API key. Needed for AI when the provider is `anthropic`. | none |
 | `GEMINI_API_KEY` | Your Gemini API key. Needed for AI when the provider is `gemini`. Free tier at Google AI Studio. | none |
-| `GEMINI_MODEL` | Gemini model used to read drawings. Check the name in AI Studio; Google renames models. | `gemini-2.5-flash` |
+| `GEMINI_MODEL` | Gemini model used to read drawings. Check the name in AI Studio; Google renames models. | `gemini-3.8-flash` |
 | `GEMINI_URL` | OpenAI-compatible endpoint for Gemini. Change it, with the key and model, to use another OpenAI-compatible provider. | `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions` |
 | `DB_PATH` | Where the SQLite file lives. | `~/.pdf2ifc/pdf2ifc.sqlite3` |
 | `ANTHROPIC_MODEL` | Model used to read drawings. | `claude-opus-5-5` |

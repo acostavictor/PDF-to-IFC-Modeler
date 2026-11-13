@@ -220,6 +220,24 @@ def check_input(cfg, images, notes):
             raise AiError("One image is over the 10 MB API limit; use a lower detail level.", 400)
 
 
+def _error_detail(err):
+    """The message from an HTTP error body, whether it is an object or a one-item list.
+
+    Gemini's OpenAI-compatible layer wraps its errors in a list ([{"error": {...}}]) while the native API and
+    Anthropic return an object ({"error": {...}}); both are read the same way.
+    """
+    try:
+        body = json.loads(err.read().decode("utf-8"))
+    except Exception:
+        return ""
+    if isinstance(body, list):
+        body = body[0] if body else {}
+    if not isinstance(body, dict):
+        return ""
+    error = body.get("error", {})
+    return error.get("message", "") if isinstance(error, dict) else ""
+
+
 def call_api(cfg, payload, opener=urlopen):
     provider = _provider(cfg)
     key = _api_key(cfg, provider)
@@ -235,12 +253,7 @@ def call_api(cfg, payload, opener=urlopen):
         resp = opener(req, timeout=cfg["REQUEST_TIMEOUT"])
         return json.loads(resp.read().decode("utf-8"))
     except HTTPError as err:
-        detail = ""
-        try:
-            detail = json.loads(err.read().decode("utf-8")).get("error", {}).get("message", "")
-        except Exception:
-            pass
-        raise AiError("The %s API returned an error (%d). %s" % (name, err.code, detail), 502)
+        raise AiError("The %s API returned an error (%d). %s" % (name, err.code, _error_detail(err)), 502)
     except socket.timeout:
         raise AiError("The %s API did not answer within %d seconds. Try fewer pages or a lower detail level."
                       % (name, cfg["REQUEST_TIMEOUT"]), 504)
@@ -251,34 +264,49 @@ def call_api(cfg, payload, opener=urlopen):
 
 
 def _check_openai_model(cfg, opener=urlopen):
-    """List the models the OpenAI-compatible endpoint offers and check ours is among them.
+    """List the models the API offers and check ours is among them.
 
-    The list reply does not say whether a model takes images, so that check is skipped here; a model that cannot
-    read drawings fails the first real run, and the error names it.
+    The OpenAI-compatible layer of some providers has no /models endpoint (Gemini's answers 404), so a 404
+    there falls back to the provider's native list one level up. The native list names models as
+    "models/<id>" under "models" instead of "id" under "data", so both shapes are read. The list reply does
+    not say whether a model takes images, so that check is skipped here; a model that cannot read drawings
+    fails the first real run, and the error names it.
     """
     key = _api_key(cfg, "gemini")
     base = cfg["GEMINI_URL"]
     if base.endswith("/chat/completions"):
         base = base[:-len("/chat/completions")]
-    req = Request(base.rstrip("/") + "/models", method="GET", headers={"authorization": "Bearer " + key})
-    try:
-        info = json.loads(opener(req, timeout=30).read().decode("utf-8"))
-    except HTTPError as err:
-        detail = ""
+    base = base.rstrip("/")
+    urls = [base + "/models"]
+    if base.endswith("/openai"):
+        urls.append(base[:-len("/openai")] + "/models")
+    info = None
+    for url in urls:
+        req = Request(url, method="GET", headers={"authorization": "Bearer " + key})
         try:
-            detail = json.loads(err.read().decode("utf-8")).get("error", {}).get("message", "")
-        except Exception:
-            pass
-        if err.code in (401, 403):
-            raise AiError("The Gemini API key was not accepted (%d). %s" % (err.code, detail), 502)
-        raise AiError("The Gemini API returned an error (%d). %s" % (err.code, detail), 502)
-    except socket.timeout:
-        raise AiError("The Gemini API did not answer within 30 seconds.", 504)
-    except URLError as err:
-        raise AiError("Could not reach the Gemini API from this server: %s" % err.reason, 502)
-    except ValueError:
-        raise AiError("The Gemini API sent a reply that could not be read.", 502)
-    ids = [m.get("id") for m in (info.get("data") or []) if isinstance(m, dict)]
+            info = json.loads(opener(req, timeout=30).read().decode("utf-8"))
+            break
+        except HTTPError as err:
+            if err.code == 404 and url != urls[-1]:
+                continue
+            detail = _error_detail(err)
+            if err.code in (401, 403):
+                raise AiError("The Gemini API key was not accepted (%d). %s" % (err.code, detail), 502)
+            raise AiError("The Gemini API returned an error (%d). %s" % (err.code, detail), 502)
+        except socket.timeout:
+            raise AiError("The Gemini API did not answer within 30 seconds.", 504)
+        except URLError as err:
+            raise AiError("Could not reach the Gemini API from this server: %s" % err.reason, 502)
+        except ValueError:
+            raise AiError("The Gemini API sent a reply that could not be read.", 502)
+    ids = []
+    for m in (info.get("data") or []) + (info.get("models") or []):
+        if not isinstance(m, dict):
+            continue
+        name = m.get("id") or m.get("name") or ""
+        if name.startswith("models/"):
+            name = name[len("models/"):]
+        ids.append(name)
     out = {"ok": True, "model": cfg["GEMINI_MODEL"], "display_name": "", "lifecycle": "", "images": None,
            "max_output_tokens": None, "warnings": []}
     if cfg["GEMINI_MODEL"] not in ids:

@@ -14,7 +14,7 @@ DEFAULTS = {
     "ANTHROPIC_URL": "https://api.anthropic.com/v1/messages",
     "AI_PROVIDER": "anthropic",
     "GEMINI_API_KEY": "",
-    "GEMINI_MODEL": "gemini-2.5-flash",
+    "GEMINI_MODEL": "gemini-3.8-flash",
     "GEMINI_URL": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
     "APP_PASSWORD": "",
     "SECRET_KEY": "",
